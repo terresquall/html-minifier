@@ -8,9 +8,10 @@ is fine.
 
 @author		Terence Pek <mail@terresquall.com>
 @website	www.terresquall.com
-@version	1.3.2
-@dated		16/05/2017
-@notes		The 'combine_style_tags' option no longer combines tags with different media attributes.
+@version	1.3.3
+@dated		18/05/2017
+@notes		Can think about how to show bytes saved from compression.
+			The 'combine_style_tags' option no longer combines tags with different media attributes.
 			- Fixed some issues with <link> and <style> tag reorganisation and compression.
 			- Removed pretty indents option (since it is not done yet).
 			- Now removes <script> tag contents and processes them separately.
@@ -20,8 +21,8 @@ is fine.
 //if(!class_exists('DOMDocument')) die('Native PHP class DOMDocument not found. HTMLMinifier requires PHP to have DOMDocument.');
 class HTMLMinifier {
 	
-	const VERSION = '1.3.2';
-	const SIGNATURE = 'Source minified by HTMLMinifier. Find it at www.terresquall.com/web/html-minifier.';
+	const VERSION = '1.3.3';
+	const SIGNATURE = 'Source minified by HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	
 	// This array contains the regular expressions for comment removal functionality in this class.
 	static $RegexArray = array(
@@ -74,6 +75,8 @@ class HTMLMinifier {
 	// Refer to self::$Defaults for what to fill $options with.
 	public static function process($html,$options = null) {
 		
+		$startLen = strlen($html);
+		
 		if($options !== null && is_array($options)) $options = array_merge(self::$Defaults,$options);
 		else $options = self::$Defaults;
 		
@@ -116,6 +119,7 @@ class HTMLMinifier {
 			self::process_script_options($dom,$scripts,$options);
 			$out = $dom->saveHTML();
 		}
+		
 		return $out;
 	}
 	

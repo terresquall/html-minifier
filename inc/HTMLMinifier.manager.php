@@ -23,7 +23,7 @@ class HTMLMinifier_Manager {
 	}
 	
 	public static function ob_start() {
-		HTMLMinifier_Manager::init_wp_options(); // Creates or initialises the WP options for the whatever.
+		HTMLMinifier_Manager::init_wp_options(); // Creates an entry for this plugin in `wp_options`.
 		
 		// Check if we should minify wp-admin and stop if we should not.
 		if(is_admin()) {
@@ -57,13 +57,17 @@ class HTMLMinifier_Manager {
 		if($option === false) {
 			$option = HTMLMinifier::$Defaults;
 			add_option( self::PLUGIN_OPTIONS_PREFIX . 'options',$option);
-		}
+		} /*else {
+			// If the option is already there, add keys to current options that are not yet in the database.
+			foreach(self::$Defaults as $k => $v) {
+				if(!array_key_exists($k,HTMLMinifier_Manager::$CurrentOptions))
+					self::$CurrentOptions[$k] = HTMLMinifier_Manager::$Defaults[$k];
+			}
+		}*/
+		
 		self::$CurrentOptions = $option;
 		
-		// Add keys to current options that are not yet in the database.
-		foreach(self::$CurrentOptions as $k => $v) {
-			if(!array_key_exists($k,HTMLMinifier_Manager::$Defaults)) self::$CurrentOptions[$k] = HTMLMinifier_Manager::$Defaults[$k];
-		}
+		
 	}
 	
 	// Remove the entry for this plugin if it is uninstalled.

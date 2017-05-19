@@ -38,7 +38,7 @@ if (!function_exists( 'add_action' )) {
 								?>> Remove HTML comments
 							</label>
 							<br>
-							<label for="show_signature" class="tooltip" title="If you want to advertise this plugin in your source, check this.">
+							<label for="show_signature" class="tooltip" title="Adds a HTML comment about this plugin at the end of the minified source.">
 								<input type="checkbox" name="show_signature" id="show_signature" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['show_signature']) && HTMLMinifier_Manager::$CurrentOptions['show_signature']) echo ' checked="checked"';
 								?>> Show signature in source

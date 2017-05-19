@@ -24,3 +24,9 @@ Upload the HTML Minifier plugin to your blog and activate it in WP Admin.
 *Release Date - 17 May 2017*
 
 * First open release to public. 
+
+= 1.0.2 =
+*Release Date - 18 May 2017*
+
+* Implemented stricter user input sanitisation on the plugin options page.
+* Optimised some code related to plugin initialisation on page load.
