@@ -8,20 +8,19 @@ is fine.
 
 @author		Terence Pek <mail@terresquall.com>
 @website	www.terresquall.com
-@version	1.3.3
-@dated		18/05/2017
-@notes		Can think about how to show bytes saved from compression.
-			The 'combine_style_tags' option no longer combines tags with different media attributes.
-			- Fixed some issues with <link> and <style> tag reorganisation and compression.
+@version	1.3.4
+@dated		20/05/2017
+@notes		Fix a bug that removed some conditional comments.
+			Does not remove comments with CDATA tags.
+			- Can think about how to show bytes saved from compression.
+			- The 'combine_style_tags' option no longer combines tags with different media attributes.
 			- Removed pretty indents option (since it is not done yet).
-			- Now removes <script> tag contents and processes them separately.
-			- Added an option to not compress <script> tag contents 'compression_ignore_script_tags'.
 			- Need to not remove comments with CDATA tags inside within Javascript.
 */
 //if(!class_exists('DOMDocument')) die('Native PHP class DOMDocument not found. HTMLMinifier requires PHP to have DOMDocument.');
 class HTMLMinifier {
 	
-	const VERSION = '1.3.3';
+	const VERSION = '1.3.4';
 	const SIGNATURE = 'Source minified by HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	
 	// This array contains the regular expressions for comment removal functionality in this class.
@@ -59,6 +58,7 @@ class HTMLMinifier {
 		
 		// Javascript optimisations.
 		'clean_js_comments' => true,
+		'remove_comments_with_cdata_tags' => false,
 		'compression_ignore_script_tags' => true,
 		'shift_script_tags_to_bottom' => false,
 		'combine_javascript_in_script_tags' => false,
@@ -92,10 +92,11 @@ class HTMLMinifier {
 		if($options['clean_html_comments']) {
 			$xpath = new DOMXPath($dom);
 			foreach($xpath->query('//comment()') as $comment) {
+
 				// If it is an is block, don't remove.
-				if(preg_match('@^\\[if [\\s\\S]*?\\]@',$comment->nodeValue) && preg_match('@\\<\\!\\[endif\\]$@',$comment->nodeValue))
+				if(preg_match('@^\\[if [\\s\\S]*?\\]@',$comment->nodeValue) || preg_match('@\\<\\!\\[endif\\]$@',$comment->nodeValue))
 					continue;
-				
+
 				$comment->parentNode->removeChild($comment);
 			}
 		}
@@ -319,13 +320,18 @@ class HTMLMinifier {
 		if(!self::$RegexString) self::$RegexString = '@('.implode('|',self::$RegexArray).')@';
 		
 		switch(strtolower($type)) {
-		case 'javascript': case 'js': case 'css':
+		case 'javascript': case 'js':
+			
+			// Do not remove comments used to start or end CDATA blocks.
+			if(preg_match('/(\\<\\!\\[CDATA\\[|\\]\\]\\>)/',$string)) return $string;
+			
+		case 'css':
 		
 			// Uses the regular expressions in self::$RegexArray.
 			return preg_replace_callback(self::$RegexString,array('HTMLMinifier','removeComments_callback_js_css'),$string);
 			
 		case 'html':
-		
+			
 			// This section is not currently used.
 			$regex = array(
 				'script' => '\\<(script|style)(\\s ?[\\s\\S]*?)?\\>([\\s\\S]*?)\\</(script|style)\\s*?\\>',
@@ -346,8 +352,9 @@ class HTMLMinifier {
 	}
 	
 	public static function removeComments_callback_html($matches) {
-		if(preg_match('/^<(style|script)/',$matches[1])) return $matches[0]; // Exclude script / style tags.
-		return (0 === strpos($matches[1], '[') || false !== strpos($matches[1], '<![')) ? $matches[0] : ''; // 
+		if(preg_match('/^<(style|script)/',$matches[1])) return $matches[0]; // Exclude script / style tags, since the regex in the caller captures them too.
+		if(substr($matches[1],0,1) === '>') return $matches[0]; // Excludes <!--> sequences, which are not comments but part of a conditional statement.  
+		return (0 === strpos($matches[1], '[') || false !== strpos($matches[1], '<![')) ? $matches[0] : ''; 
 	}
 	
 }

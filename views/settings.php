@@ -8,7 +8,7 @@ if (!function_exists( 'add_action' )) {
 		$p = HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX;
 		if(isset($GLOBALS[$p . 'settings_notice_message']) && isset($GLOBALS[$p . 'settings_notice_class']))
 			echo '<div class="' . $GLOBALS[$p . 'settings_notice_class'] . '"><p>' . $GLOBALS[$p . 'settings_notice_message'] . '</p></div>';
-	?><table style="background:#e8e8e8;padding:0.5em;margin-top:0.5em;font-size:11px;color:#666;width:50%;border-radius:8px;">
+	?><table style="background:#e8e8e8;padding:0.5em;margin-top:0.5em;font-size:11px;color:#666;max-width:100%;width:550px;border-radius:8px;">
 		<tr>
 			<td rowspan="3" style="width:76px;text-align:center;"><img src="<?php echo HTML_MINIFIER__PLUGIN_URL; ?>assets/icon-128x128.png" style="height:64px;"/></td>
 			<th style="width:100px;text-align:left;">Plugin Version:</th>
@@ -88,6 +88,12 @@ if (!function_exists( 'add_action' )) {
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) && HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) echo ' checked="checked"';
 								?>> Remove Javascript comments
 							</label>
+							<br<?php if(!isset(HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) || !HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) echo ' style="display:none;"'?>/>
+							<label for="remove_comments_with_cdata_tags" class="tooltip" title="In XHTML, content inside &lt;script&gt; tags are encapsulated with opening and closing CDATA tags that are commented out. This makes the document XML-compatible, so comments containing CDATA tags should not be removed." rel="clean_js_comments" style="padding-left:1.7em;<?php if(!isset(HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) || !HTMLMinifier_Manager::$CurrentOptions['clean_js_comments']) echo 'display:none;'?>">
+								<input type="checkbox" name="remove_comments_with_cdata_tags" id="remove_comments_with_cdata_tags" value="1"<?php 
+									if(isset(HTMLMinifier_Manager::$CurrentOptions['remove_comments_with_cdata_tags']) && HTMLMinifier_Manager::$CurrentOptions['remove_comments_with_cdata_tags']) echo ' checked="checked"';
+								?>> Remove comments containing CDATA tags
+							</label>
 							<br/>
 							<label for="compression_ignore_script_tags" class="tooltip" title="If your Javascript code isn't properly-written, i.e. your lines are not properly truncated with semi-colons, check this to ignore compressing them.">
 								<input name="compression_ignore_script_tags" type="checkbox" id="compression_ignore_script_tags" value="1"<?php 
@@ -101,7 +107,7 @@ if (!function_exists( 'add_action' )) {
 								?>> Shift all <code>&lt;script&gt;</code> tags to the end of <code>&lt;body&gt;</code>
 							</label>
 							<br/>
-							<label for="combine_javascript_in_script_tags" class="tooltip" title="Only applicable for &lt;script&gt; tags without a specified MIME type or of MIME type &quot;text/javascript&quot;." rel="shift_script_tags_to_bottom" style="padding-left:1.7em;<?php if(!isset(HTMLMinifier_Manager::$CurrentOptions['shift_script_tags_to_bottom']) || !HTMLMinifier_Manager::$CurrentOptions['shift_script_tags_to_bottom']) echo 'display:none;'?>">
+							<label for="combine_javascript_in_script_tags" class="tooltip" title="Only applicable for &lt;script&gt; tags with an unspecified MIME type or of MIME type &quot;text/javascript&quot;." rel="shift_script_tags_to_bottom" style="padding-left:1.7em;<?php if(!isset(HTMLMinifier_Manager::$CurrentOptions['shift_script_tags_to_bottom']) || !HTMLMinifier_Manager::$CurrentOptions['shift_script_tags_to_bottom']) echo 'display:none;'?>">
 								<input name="combine_javascript_in_script_tags" type="checkbox" id="combine_javascript_in_script_tags" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['combine_javascript_in_script_tags']) && HTMLMinifier_Manager::$CurrentOptions['combine_javascript_in_script_tags']) echo ' checked="checked"';
 								?>> Combine Javascript in <code>&lt;script&gt;</code> tags
@@ -124,7 +130,7 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<!--tr>
-                    <th scope="row">Minify WP-Admin Source<br/><small style="color:#d00;font-weight:100;">Doesn't work at the moment. Will be implemented in future.</small></th>
+                    <th scope="row">Minify WP-Admin Source<br/><small style="color:#d00;font-weight:100;">Experimental feature. Might render you unable to access WP-Admin if you activate this!</small></th>
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span>Options</span></legend>
@@ -172,10 +178,14 @@ if (!function_exists( 'add_action' )) {
 	$form.find('label[rel]').each(function() {
 		var rel = this.getAttribute('rel'), $this = $(this),
 			$parent = $form.find('#'+rel).on('click',function(evt) {
-				if(this.checked)
-					$this.slideDown(400).children('input').prop('disabled',false);
-				else
-					$this.slideUp(400).children('input').prop('disabled',true);
+				if(this.checked) {
+					$this.prev().show();
+					$this.slideDown(257).children('input').prop('disabled',false);
+				} else {
+					$this.slideUp(237,function() {
+						$this.prev().hide();
+					}).children('input').prop('disabled',true);
+				}
 			});
 	});
 	
