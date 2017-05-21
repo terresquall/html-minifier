@@ -1,10 +1,10 @@
 === HTML Minifier ===
 
 Contributors: terresquall
-Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
+Tags: source minifier, minify, html, javascript, css, html optimiser
 Requires at least: 3.2
 Tested up to: 4.7.5
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 
 A server-side source code minifier for Wordpress, HTML Minifier is designed to minimise and optimise HTML output.
@@ -19,9 +19,22 @@ There is also a [GitHub repository](https://github.com/terresquall/html-minifier
 
 == Installation ==
 
-Upload the HTML Minifier plugin to your blog and activate it in WP Admin.
+Unzip the downloaded file into the plugin folder in your blog and activate it in WP-Admin. Alternatively, you can just download it directly from WP-Admin and activate it.
 
 == Changelog ==
+
+= 1.0.4 =
+*Release Date - 21 May 2017*
+
+Mainly a bug-fixing release.
+
+* Fixed a bug that caused some IE conditional comments to be removed.
+* Minification of <script> tag contents is now done by string manipulation instead of PHP DOMDocument. This fixes a few bugs with IE conditional comments (yes, those are stupid).
+* The "Show signature" option now tracks the number of bytes saved from minification.
+* Added a new "Minify WP-Admin" option. You might not want to use it until after a few versions, as it can break certain pages in your WP-Admin. Note that "Combine Javascript in script tags" is always disabled in WP-Admin, as it breaks the code.
+* If your HTML source is broken, HTMLMinifier (the class) now throws some errors. In the future, it will start checking if your HTML document is valid before minifying, so that its easier to find where errors are.
+
+As usual, please report any bugs to [mail@terresquall.com](mailto:mail@terresquall.com).
 
 = 1.0.3 =
 *Release Date - 20 May 2017*

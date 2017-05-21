@@ -29,6 +29,7 @@ class HTMLMinifier_Manager {
 		if(is_admin()) {
 			if(!isset(self::$CurrentOptions['minify_wp_admin'])) return false;
 			if(!self::$CurrentOptions['minify_wp_admin']) return false;
+			self::$CurrentOptions['combine_javascript_in_script_tags'] = false; // Force false because it will break Wordpress otherwise.
 		}
 		
 		HTMLMinifier::$Defaults = self::$CurrentOptions;
@@ -57,13 +58,7 @@ class HTMLMinifier_Manager {
 		if($option === false) {
 			$option = HTMLMinifier::$Defaults;
 			add_option( self::PLUGIN_OPTIONS_PREFIX . 'options',$option);
-		} /*else {
-			// If the option is already there, add keys to current options that are not yet in the database.
-			foreach(self::$Defaults as $k => $v) {
-				if(!array_key_exists($k,HTMLMinifier_Manager::$CurrentOptions))
-					self::$CurrentOptions[$k] = HTMLMinifier_Manager::$Defaults[$k];
-			}
-		}*/
+		}
 		
 		self::$CurrentOptions = $option;
 		

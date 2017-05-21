@@ -129,19 +129,19 @@ if (!function_exists( 'add_action' )) {
                         </fieldset>
                     </td>
                 </tr>
-				<!--tr>
-                    <th scope="row">Minify WP-Admin Source<br/><small style="color:#d00;font-weight:100;">Experimental feature. Might render you unable to access WP-Admin if you activate this!</small></th>
+				<tr>
+                    <th scope="row">Minify WP-Admin Source<br/><small style="color:#d00;font-weight:100;">Experimental feature. If you run into bugs, it might mess up certain features in WP-Admin!</small></th>
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span>Options</span></legend>
-                            <label for="minify_wp_admin" class="tooltip" title="Doesn't work at the moment. Will be implemented in future.">
+                            <label for="minify_wp_admin" class="tooltip" title="If this messes up your installation, come back to this page to uncheck it. Or disable this plugin.">
 								<input name="minify_wp_admin" type="checkbox" id="minify_wp_admin" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['minify_wp_admin']) && HTMLMinifier_Manager::$CurrentOptions['minify_wp_admin']) echo ' checked="checked"';
 								?>> Might cause WP-Admin to become unusable
 							</label>
                         </fieldset>
                     </td>
-                </tr-->
+                </tr>
 				<tr>
                     <th scope="row"></th>
                     <td>

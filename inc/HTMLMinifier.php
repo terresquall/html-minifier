@@ -8,9 +8,10 @@ is fine.
 
 @author		Terence Pek <mail@terresquall.com>
 @website	www.terresquall.com
-@version	1.3.4
-@dated		20/05/2017
-@notes		Fix a bug that removed some conditional comments.
+@version	1.3.6
+@dated		21/05/2017
+@notes		Fixed a bug that caused Javascript inside conditional comments to not be minified properly. 
+			Fixed a bug that removed some conditional comments.
 			Does not remove comments with CDATA tags.
 			- Can think about how to show bytes saved from compression.
 			- The 'combine_style_tags' option no longer combines tags with different media attributes.
@@ -20,8 +21,8 @@ is fine.
 //if(!class_exists('DOMDocument')) die('Native PHP class DOMDocument not found. HTMLMinifier requires PHP to have DOMDocument.');
 class HTMLMinifier {
 	
-	const VERSION = '1.3.4';
-	const SIGNATURE = 'Source minified by HTMLMinifier: www.terresquall.com/web/html-minifier.';
+	const VERSION = '1.3.6';
+	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	
 	// This array contains the regular expressions for comment removal functionality in this class.
 	static $RegexArray = array(
@@ -75,7 +76,7 @@ class HTMLMinifier {
 	// Refer to self::$Defaults for what to fill $options with.
 	public static function process($html,$options = null) {
 		
-		$startLen = strlen($html);
+		$startLen = strlen($html); // For counting saved space.
 		
 		if($options !== null && is_array($options)) $options = array_merge(self::$Defaults,$options);
 		else $options = self::$Defaults;
@@ -102,23 +103,37 @@ class HTMLMinifier {
 		}
 		
 		self::process_stylesheet_options($dom,$options);
-		if(!$options['compression_ignore_script_tags']) self::process_script_options($dom,$scripts,$options);
+				
+		// If we are ignoring compression of script content, then compress first before putting script tag contents back.
+		$out = $dom->saveHTML();
+		if($options['compression_ignore_script_tags']) {
+			// Compress the goods.
+			$out = self::compress($out,$options['compression_mode']);
+			
+			//$dom = new DOMDocument();
+			//$dom->loadHTML($out, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+			$out = self::process_script_options($out,$scripts,$options);
+			//$out = $dom->saveHTML();
+			
+		} else { // Otherwise, put the script contents back, then compress the whole thing.
+			$out = self::process_script_options($out,$scripts,$options);
+			
+			// Compress the goods.
+			$out = self::compress($out,$options['compression_mode']);
+		}
 		
 		// Signs off before the HTML closing tag.
 		if($options['show_signature']) {
-			$html = $dom->getElementsByTagName('html')->item(0);
-			if($html) $html->appendChild($dom->createComment(self::SIGNATURE));
-		}
-		
-		// Compressing of HTML source.
-		$out = self::compress($dom->saveHTML(),$options['compression_mode']);
-		
-		// If Javascript compression is ignored.
-		if($options['compression_ignore_script_tags']) {
-			$dom = new DOMDocument();
-			$dom->loadHTML($out, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-			self::process_script_options($dom,$scripts,$options);
-			$out = $dom->saveHTML();
+			$sig = sprintf(self::SIGNATURE, $startLen, strlen($out));
+			$pos = strrpos($out,'</html>');
+			
+			// Terminate if the </html> tag is missing.
+			if($pos === false) {
+				trigger_error('HTMLMinifier::process(): Missing &lt;/html&gt; tag.');
+				return $out;
+			}
+			
+			$out = substr_replace($out,'<!-- ' . $sig . ' --></html>',$pos,7);
 		}
 		
 		return $out;
@@ -211,7 +226,6 @@ class HTMLMinifier {
 		for($i=0;$i<$l;$i++) {
 			// Ignore if there is an <src> attribute.
 			//if(preg_match('%src\\=(\'[\\S]*\'|"[\\S]*")%i',$matches[1][$i])) continue;
-			
 			array_push($scripts,$matches[2][$i]);
 			$html = str_replace($matches[0][$i],$matches[1][$i].$matches[3][$i],$html);
 		}
@@ -220,81 +234,98 @@ class HTMLMinifier {
 	}
 	
 	// $scripts is the content of all script tags without src.
-	private static function process_script_options($dom,$scripts,$options) {
+	private static function process_script_options($html,$scripts,$options) {
 		
 		// Remove all Javascript comments from the script tags.
 		if($options['clean_js_comments']) {
 			if(count($scripts) > 0){
-				foreach($scripts as $k => $src) {
+				foreach($scripts as $k => $src)
 					$scripts[$k] = self::removeComments($src);
-					//$src->appendChild($dom->createTextNode($new_text));
-				}
 			}
 		}
 				
 		// Shift all detected script tags to the foot of the document (after formatting them).
-		$dom_scripts = $dom->getElementsByTagName('script');
+		$matches = array();
+		$l = preg_match_all('%(\\<script ?[\\s\\S]*?\\>)(\\s*?)(\\</script\\>)%i',$html,$matches);
+		
+		// For detecting errors in reinjection.
+		if($l !== count($scripts)) die('HTMLMinifier::process_script_options() script error: Number of input and output script tags are different.');
 		
 		if($options['shift_script_tags_to_bottom']) {
 			
-			if($dom_scripts->length > 0) {
+			if($l > 0) {
 				
 				$script_js = array(); // Scripts that can be combined into one tag.
 				$script_others = array(); // Scripts that have to be kept distinct.
-				$script_original = array(); // Stores the original order of all the script tags.
 				
 				// Remove all <script> tags that do not have an SRC attribute, or do not contain Javascript.
-				foreach($dom_scripts as $k => $src) {
+				// Also preps the data into different arrays for easier organisation later.
+				for($i=0;$i < $l;$i++) {
+					
+					// Read tag contents as XML for easier pulling of attributes.
+					$xml = simplexml_load_string($matches[0][$i]);
 					
 					// Re-append the contents of the script tag.
-					$src->appendChild($dom->createTextNode($scripts[$k]));
-					$type = $src->attributes->getNamedItem('type');
+					$type = strval($xml['type']);
 					
-					$script_original[] = $src;
-					if((!$type || $type->value === 'text/javascript') && !$src->attributes->getNamedItem('src')) {
-						$script_js[] = $src;
+					// Remove all of the old tags as they will be moved to the bottom.
+					$pos = strpos($html,$matches[0][$i]);
+					$html = substr_replace($html,'',$pos,strlen($matches[0][$i]));
+					
+					// Categorise the script tags for easier processing later.
+					if((!$type || $type === 'text/javascript') && !$xml['src']) {
+						$script_js[] = $i;
 					} else {
-						$script_others[] = $src;
+						$script_others[] = $i;
 					}
-					
 				}
 				
-				// Remove all scripts from the DOM, as they are reinserted at the bottom.
-				foreach($script_original as $src) $src->parentNode->removeChild($src);
+				// Insert into end of body tag if there is one.
 				
-				// Insert into end of body tag if there is one. Otherwise, insert into html tag.
-				$body = $dom->getElementsByTagName('body');
-				$html = $dom->getElementsByTagName('html');
-				$host = $body ? $body->item(0) : $html->item(0);
-				if(!$host) $host = $dom;
+				// Warn and terminate if there is no </body> tag.
+				$body = strrpos($html,'</body>');
+				if($body === false) {
+					trigger_error('HTMLMinifier::process_script_options(): Your HTML document is malformed. It either has a &lt;body&gt; tag that is not closed, or no &lt;body&gt; tag. Minification stopped.');
+					return $html;
+				}
 				
+				// Start processing otherwise.
 				if($options['combine_javascript_in_script_tags']) {
 					
-					// Append all distinct scripts onto the document.
-					foreach($script_others as $src) $host->appendChild($src);
+					// Append all distinct scripts (e.g. type="text/html" or others) onto the document.
+					foreach($script_others as $i) {
+						$html = substr_replace($html,$matches[1][$i] . $scripts[$i] . $matches[3][$i] . '</body>',$body,7); // Add script before the end of body tag.
+						$body = strrpos($html,'</body>');
+					}
 					
 					// Create a single script tag and paste it at the end.
-					$new_script = $dom->createElement('script');
-					foreach($script_js as $src)
-						$new_script->appendChild($dom->createTextNode($src->nodeValue));
-					$host->appendChild($new_script);
+					$new_script = '<script>';
+					foreach($script_js as $i)
+						$new_script .= $scripts[$i];
+					$new_script .= '</script>';
+					$html = substr_replace($html,$new_script . '</body>',$body,7);
 
 				} else {
 					
-					// Append back all the script tags that were upended.
-					foreach($script_original as $src) $host->appendChild($src);
+					// Append back all the script tags in the original order if not combining.
+					for($i=0;$i<$l;$i++) {
+						$html = substr_replace($html,$matches[1][$i] . $scripts[$i] . $matches[3][$i] . '</body>',$body,7);
+						$body = strrpos($html,'</body>');
+					}
 					
 				}
 			
 			}
 		} else {
 			
-			// Re-add the code inside the <script> tags in the DOM.
-			foreach($dom_scripts as $k => $src) {
-				$src->appendChild($dom->createTextNode($scripts[$k]));
+			for($i=0;$i<$l;$i++) {
+				$pos = strpos($html,$matches[0][$i]);
+				$html = substr_replace($html,$matches[1][$i].$scripts[$i].$matches[3][$i],$pos,strlen($matches[0][$i]));
 			}
-			
+
 		}
+		
+		return $html;
 	}
 	
 	// Given a compression string, returns compressed HTML output.
@@ -332,7 +363,7 @@ class HTMLMinifier {
 			
 		case 'html':
 			
-			// This section is not currently used.
+			// NOT USED. Xpath used to pull out comments instead.
 			$regex = array(
 				'script' => '\\<(script|style)(\\s ?[\\s\\S]*?)?\\>([\\s\\S]*?)\\</(script|style)\\s*?\\>',
 				'comment' => '<!--([\\s\\S]*?)-->' // Remove all comments except [if ] blocks.
