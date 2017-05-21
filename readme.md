@@ -4,7 +4,7 @@ Contributors: terresquall
 Tags: akismet, comments, spam, antispam, anti-spam, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 3.2
 Tested up to: 4.7.5
-Stable tag: 1.0.1
+Stable tag: 1.0.3
 License: GPLv2 or later
 
 A server-side source code minifier for Wordpress, HTML Minifier is designed to minimise and optimise HTML output.
