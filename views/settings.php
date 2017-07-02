@@ -78,7 +78,7 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row">Script Optimisation<br/><small style="font-weight:100;">If your code messes up, the options in this section are probably the culprit. Try unchecking some of the checkboxes here.</small></th>
+                    <th scope="row">Script Optimisation<br/><small style="font-weight:100;">If your code breaks after activating the plugin, try checking only the default options in this section (i.e. remove Javascript comments and don't compress &lt;script&gt; contents).</small></th>
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span>Options</span></legend>
@@ -119,7 +119,7 @@ if (!function_exists( 'add_action' )) {
                     <th scope="row">Compression Mode</th>
                     <td>
                         <fieldset>
-                            <select name="compression_mode">
+                            <select name="compression_mode" id="compression_mode">
 								<?php
 								if(class_exists('HTMLMinifier')) 
 									foreach(HTMLMinifier::$CompressionMode as $k => $v)
@@ -146,7 +146,7 @@ if (!function_exists( 'add_action' )) {
                     <th scope="row"></th>
                     <td>
                         <input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes"/>
-						<input type="submit" name="restore_default" id="restore_default" class="button button-secondary" value="Restore Default Settings" onclick="return confirm('Are you sure? Your current settings will be lost.');"/>
+						<input type="submit" name="restore_default" id="restore_default" class="button button-secondary" value="Restore Defaults" onclick="return confirm('Are you sure? Your current settings will be lost.');"/>
                     </td>
                 </tr>
             </tbody>
@@ -178,9 +178,14 @@ if (!function_exists( 'add_action' )) {
 	$form.find('label[rel]').each(function() {
 		var rel = this.getAttribute('rel'), $this = $(this),
 			$parent = $form.find('#'+rel).on('click',function(evt) {
+				if(this.hasAttribute('required')) {
+					alert("Comments must be removed using the current Compression Mode.");
+					return false;
+				}
+				
 				if(this.checked) {
 					$this.prev().show();
-					$this.slideDown(257).children('input').prop('disabled',false);
+					$this.slideDown(217).children('input').prop('disabled',false);
 				} else {
 					$this.slideUp(237,function() {
 						$this.prev().hide();
@@ -188,6 +193,24 @@ if (!function_exists( 'add_action' )) {
 				}
 			});
 	});
+	
+	// Auto-check remove comments in CSS and JS if we select all_whitespace for compression.
+	var $clean_js_comments = $(document.getElementById("clean_js_comments")),
+		$clean_css_comments = $(document.getElementById("clean_css_comments"));
+	$(document.getElementById("compression_mode")).on('change',function(e){
+		if(this.value === 'all_whitespace') {
+			if(!$clean_js_comments.prop('checked')) $clean_js_comments.trigger('click');
+			if(!$clean_css_comments.prop('checked')) $clean_css_comments.trigger('click');
+			$clean_js_comments.attr('required','required');
+			$clean_css_comments.attr('required','required').on('click',function(e) { 
+				alert("Comments must be removed using the current Compression Mode.");
+				return false;
+			});
+		} else {
+			$clean_js_comments.removeAttr("required");
+			$clean_css_comments.removeAttr("required").off('click');
+		}
+	}).trigger('change');
 	
 })(jQuery);
 </script>

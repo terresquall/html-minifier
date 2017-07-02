@@ -4,7 +4,7 @@ Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, html optimiser
 Requires at least: 3.2
 Tested up to: 4.7.5
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 
 A server-side source code minifier for Wordpress, HTML Minifier is designed to minimise and optimise HTML output.
@@ -17,11 +17,26 @@ A variety of optimisation options and minification styles are available in the p
 
 There is also a [GitHub repository](https://github.com/terresquall/html-minifier) for the project, if you want to contribute.
 
+Note that this software is still in beta and might not work properly with some Wordpress sites. Use it at your own risk!
+
 == Installation ==
 
 Unzip the downloaded file into the plugin folder in your blog and activate it in WP-Admin. Alternatively, you can just download it directly from WP-Admin and activate it.
 
 == Changelog ==
+
+= 1.0.5 =
+*Release Date - 2 July 2017*
+
+Watch out for a native caching function in this plugin in future!
+
+* Fixed a small issue with the movement of script tags inside IE conditional brackets.
+* Now you cannot uncheck 'Remove JS comments' and 'Remove CSS comments' when your compression mode is "All whitespace".
+
+= 1.0.4b/c =
+*Release Date - 26 May 2017*
+
+Marked this plugin as being in beta in the readme.
 
 = 1.0.4 =
 *Release Date - 21 May 2017*
