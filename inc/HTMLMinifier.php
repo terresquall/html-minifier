@@ -8,11 +8,12 @@ is fine.
 
 @author		Terence Pek <mail@terresquall.com>
 @website	www.terresquall.com
-@version	2.0.2
-@dated		02/07/2017
-@notes		Force comment cleaning for 'all_whitespace' compression mode. 
-			Fixed a bug with script tags inside conditional comments.
-			Added a caching function for v2.0.1.
+@version	2.0.4
+@dated		28/08/2017
+@notes		Made $CacheFolder more lenient with directory separators.
+			- Force comment cleaning for 'all_whitespace' compression mode. 
+			- Fixed a bug with script tags inside conditional comments.
+			- Added a caching function for v2.0.1.
 			- Removed pretty indents option (since it is not done yet).
 */
 class HTMLMinifier {
@@ -20,7 +21,7 @@ class HTMLMinifier {
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '2.0.2';
+	const VERSION = '2.0.4';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -67,11 +68,31 @@ class HTMLMinifier {
 		
 		// How do you want to compress the script?
 		'compression_mode' => 'all_whitespace_not_newlines',
-		'compression_ignore_css' => true // Not used.
+	);
+	
+	private static $Presets = array(
+		'super_safe' => array('compression_mode' => 'none'),
+		'safe' => array(),
+		'moderate' => array(
+			'shift_link_tags_to_head' => true, 'shift_style_tags_to_head' => true,
+			'combine_style_tags' => true, 'shift_script_tags_to_bottom' => true,
+		),
+		'fully_optimised' => array(
+			'shift_link_tags_to_head' => true, 'shift_style_tags_to_head' => true,
+			'combine_style_tags' => true, 'shift_script_tags_to_bottom' => true,
+			'compression_ignore_script_tags' => true, 'combine_javascript_in_script_tags' => true,
+			'compression_mode' => 'all_whitespace'
+		)
 	);
 	
 	public function __construct() { throw new Exception("Please don't try to initialise the HTMLMinifier class! Use it as a static class."); }
-		
+	
+	// Get preset settings for process().
+	public static function get_presets($type) {
+		if(!array_key_exists($type,self::$Presets)) return null;
+		return array_merge(self::$Defaults,self::$Presets[$type]);
+	}
+	
 	// This is THE function that you call when you use this.
 	// Refer to self::$Defaults for what to fill $options with.
 	public static function process($html,$options = null,$cache_key = '') {
@@ -177,8 +198,9 @@ class HTMLMinifier {
 	public static function cache($path,$arg = null) {
 		
 		$hash = md5($path);
-		$fullpath = self::$CacheFolder . $hash . '.html';
-
+		$folderpath = realpath(self::$CacheFolder);
+		$fullpath = $folderpath . DIRECTORY_SEPARATOR . "$hash.html";
+		
 		// Check if we can write into the folder.
 		if(!is_writable(self::$CacheFolder)) {
 			trigger_error("HTMLMinifier::cache(): Assigned folder for storing the cached file '" . self::$CacheFolder . "' is not writeable or does not exist.");
@@ -199,7 +221,7 @@ class HTMLMinifier {
 			if(self::$CacheExpiry > 0 && (is_null($arg) || $arg === true)) {
 				if(time() - filectime($fullpath) > self::$CacheExpiry) {
 					if(!unlink($fullpath))
-						trigger_error("HTMLMinifier::cache(): Unable to delete old cached file of '$path'.");
+						trigger_error("HTMLMinifier::cache(): Unable to delete expired cached file of '$path'.");
 					return false;
 				}
 			}

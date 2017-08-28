@@ -14,9 +14,7 @@ class HTMLMinifier_Manager {
 	// Called with an action hook in the main plugin file.
 	public static function init() {
 		// Get defaults from the HTMLMinifier class, then append an additional option to it.
-		self::$Defaults = array_merge(HTMLMinifier::$Defaults,array(
-			'minify_wp_admin' => false
-		));
+		self::$Defaults = array_merge(HTMLMinifier::$Defaults,array('minify_wp_admin' => false));
 		
 		// Start obfuscation.
 		self::ob_start();
@@ -36,21 +34,16 @@ class HTMLMinifier_Manager {
 		return ob_start(array('HTMLMinifier','process')); // The Wordpress engine will close this ob.
 	}
 	
-	// This is for flushing through all the ob levels. NOT USED.
-	public static function ob_end($options = null,$returnOutput = false) { 
-		
-		$final = '';
-
-		// We'll need to get the number of ob levels we're in, so that we can iterate over each, collecting
-		// that buffer's output into the final output.
-		$levels = ob_get_level();
-		
-		for($i = 0; $i < $levels; $i++) $final .= ob_get_clean();
-		
-		$final = self::process($final,$options);
-		
-		if($returnOutput) return $final;
-		echo $final;
+	// This function hijacks the main query and injects a cached page if there is any.
+	public static function posts_request($request, $query) {
+		if ( is_home() && $query->is_main_query() ) {
+			$page = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
+			//$key = 'homepage_query_cache_' . $page;
+			//if(wp_cache_get( $key, 'cache_group' ))
+			$request = null;
+		}
+		//var_dump($request,$query);
+		//return null;
 	}
 	
 	public static function init_wp_options() {
@@ -61,8 +54,13 @@ class HTMLMinifier_Manager {
 		}
 		
 		self::$CurrentOptions = $option;
-		
-		
+	}
+	
+	// Wrapper around the HTMLMinifier function, adding an additional option unique to Wordpress.
+	public static function get_presets($type) {
+		$r = HTMLMinifier::get_presets($type);
+		if($r) return array_merge($r,array('minify_wp_admin' => false));
+		return $r;
 	}
 	
 	// Remove the entry for this plugin if it is uninstalled.

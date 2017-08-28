@@ -13,7 +13,7 @@ class HTMLMinifier_Admin {
 	
 	public static function init() {
 		add_action('admin_menu', array('HTMLMinifier_Admin','admin_menu'));
-		add_action( 'admin_enqueue_scripts', array('HTMLMinifier_Admin','admin_enqueue_scripts') );
+		add_action('admin_enqueue_scripts', array('HTMLMinifier_Admin','admin_enqueue_scripts'));
 		add_filter('plugin_action_links_html-minifier/html-minifier.php', array('HTMLMinifier_Admin', 'admin_plugin_settings_link' ));
 	}
 	
@@ -23,7 +23,19 @@ class HTMLMinifier_Admin {
 		// If restore default button is pressed, restore the default settings.
 		if(isset($post['restore_default'])) {
 			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::$Defaults;
-			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$Defaults)) return -1;
+			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			else return 0;
+		} elseif(isset($post['super_safe'])) {
+			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('super_safe');
+			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			else return 0;
+		} elseif(isset($post['moderate'])) {
+			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('moderate');
+			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			else return 0;
+		} elseif(isset($post['fully_optimised'])) {
+			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('fully_optimised');
+			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
 			else return 0;
 		}
 		
@@ -109,7 +121,7 @@ class HTMLMinifier_Admin {
 	}
 	
 	public static function display_settings() {
-		$file = HTML_MINIFIER__PLUGIN_DIR.'views/settings.php';
+		$file = HTML_MINIFIER__PLUGIN_DIR.'views/settings-main.php';
 		include $file;
 	}
 }

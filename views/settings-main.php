@@ -10,7 +10,7 @@ if (!function_exists( 'add_action' )) {
 			echo '<div class="' . $GLOBALS[$p . 'settings_notice_class'] . '"><p>' . $GLOBALS[$p . 'settings_notice_message'] . '</p></div>';
 	?><table style="background:#e8e8e8;padding:0.5em;margin-top:0.5em;font-size:11px;color:#666;max-width:100%;width:550px;border-radius:8px;">
 		<tr>
-			<td rowspan="3" style="width:76px;text-align:center;"><img src="<?php echo HTML_MINIFIER__PLUGIN_URL; ?>assets/icon-128x128.png" style="height:64px;"/></td>
+			<td rowspan="4" style="width:76px;text-align:center;"><img src="<?php echo HTML_MINIFIER__PLUGIN_URL; ?>assets/icon-128x128.png" style="height:64px;"/></td>
 			<th style="width:100px;text-align:left;">Plugin Version:</th>
 			<td style="text-align:left;"><?php echo HTML_MINIFIER_PLUGIN_VERSION; ?></td>
 		</tr>
@@ -22,8 +22,16 @@ if (!function_exists( 'add_action' )) {
 			<th style="width:100px;text-align:left;">Minifier Version:</th>
 			<td style="text-align:left;"><?php echo HTML_MINIFIER_VERSION; ?></td>
 		</tr>
+		<tr>
+			<th style="width:100px;text-align:left;">Support:</th>
+			<td style="text-align:left;"><a href="https://paypal.me/Terresquall" target="_blank">Donate</a></td>
+		</tr>
 	</table>
-    <form method="post" id="html-minifier-form-settings">
+	<h2 class="nav-tab-wrapper">
+		<a href="#minify-options" class="nav-tab">Minification Options</a>
+		<a href="#caching-options" class="nav-tab">Caching Options</a>
+	</h2>
+	<form method="post" id="minify-options" class="nav-tabbed">
 		<?php echo wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
         <table class="form-table">
             <tbody>
@@ -143,6 +151,87 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
+                    <th scope="row">Quick Presets<br/><small style="font-weight:100;">Don't know how to setup? Try these presets.</small></th>
+                    <td valign="top">
+                        <input type="submit" name="super_safe" id="super_safe" value="Super Safe" class="button-secondary tooltip" onclick="return confirm('Are you sure? Your current settings will be lost.');" title="Only the absolute safest minification options are selected."/>
+                        <input type="submit" name="restore_default" id="restore_default" value="Safe (Default)" class="button-secondary tooltip" onclick="return confirm('Are you sure? Your current settings will be lost.');" title="Default settings that the plugin comes with."/>
+                        <input type="submit" name="moderate" id="moderate" value="Moderate" class="button-secondary tooltip" onclick="return confirm('Are you sure? Your current settings will be lost.');" title="Only the riskiest options are left out."/>
+                        <input type="submit" name="fully_optimised" id="fully_optimised" value="Fully-Optimised" class="button-secondary tooltip" onclick="return confirm('Are you sure? Your current settings will be lost.');" title="Optimises everything. 'Nuff said."/>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row"></th>
+                    <td>
+                        <input type="submit" name="submit" id="submit" class="button-primary" value="Save Changes"/>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+	
+	<form method="post" id="caching-options" class="nav-tabbed">
+		<br/>
+		<h2 class="title dashicons-before dashicons-hammer">&nbsp;&nbsp;Feature coming soon!</h2>
+		<p>In the meantime, if you need caching for your site, please try out <a href="<?php echo site_url('/wp-admin/plugin-install.php?s=wp+super+cache&tab=search&type=term'); ?>" target="_blank">WP Super Cache</a>. It has been tested to work with HTML Minifier.</p>
+		<p><a href="#minify-options" class="button button-secondary" id="cache-back-to-minify"/>&larr; Back to Minification Options</a></p>
+		<br/>
+		<?php //echo wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
+        <!--table class="form-table">
+            <tbody>
+				<tr>
+                    <th scope="row">Enable Caching</th>
+                    <td>
+                        <fieldset>
+                            <legend class="screen-reader-text"><span>Options</span></legend>
+							<label for="enable_caching" class="tooltip" title="When turned on, all your front-end pages will be cached.">
+								<input type="checkbox" name="enable_caching" id="enable_caching" value="1"<?php 
+									if(isset(HTMLMinifier_Manager::$CurrentOptions['enable_caching']) && HTMLMinifier_Manager::$CurrentOptions['enable_caching']) echo ' checked="checked"';
+								?>>
+							</label>
+                        </fieldset>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row" class="enable_caching">Expiration Time</th>
+                    <td>
+                        <fieldset class="tooltip" title="How long a cached page is valid for, in hours." rel="enable_caching">
+                            <legend class="screen-reader-text"><span>Options</span></legend>
+                            <input type="number" name="expiration_time" id="expiration_time" step="1" min="0" max="999" value="<?php 
+								if(isset(HTMLMinifier_Manager::$CurrentOptions['expiration_time']) && HTMLMinifier_Manager::$CurrentOptions['expiration_time']) echo HTMLMinifier_Manager::$CurrentOptions['expiration_time'];
+								else echo '24'
+							?>" style="width:60px;"> hours
+                        </fieldset>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row" class="enable_caching">Cache Post Types</th>
+                    <td>
+                        <fieldset rel="enable_caching">
+                            <legend class="screen-reader-text"><span>Options</span></legend>
+							<?php 
+							$pt = get_post_types();
+							$ptl = count($pt);
+							foreach($pt as $i => $p) {
+							?>
+                            <label for="post_type_<?php echo $p; ?>" class="tooltip" title="Removes all comments in CSS embedded on the page.">
+								<input type="checkbox" name="post_type_<?php echo $p; ?>" id="post_type_<?php echo $p; ?>" value="1"<?php 
+									if(isset(HTMLMinifier_Manager::$CurrentOptions['post_type_'.$p]) && HTMLMinifier_Manager::$CurrentOptions['post_type_'.$p]) echo ' checked="checked"';
+								?>> <?php echo $p; ?>
+							</label>
+							<?php 
+								if($i < $ptl-1) echo '<br/>';
+							} 
+							?>
+                        </fieldset>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row" class="enable_caching">Clear Cache</th>
+                    <td>
+                        <input type="submit" name="submit" id="submit" class="button button-secondary" value="Remove All Cached Pages" rel="enable_caching"/>
+                    </td>
+                </tr>
+				<tr>
                     <th scope="row"></th>
                     <td>
                         <input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes"/>
@@ -150,7 +239,7 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
             </tbody>
-        </table>
+        </table-->
     </form>
 	<hr/>
 	<h2 class="title dashicons-before dashicons-admin-generic">&nbsp;&nbsp;Feedback &amp; Bug Reporting</h2>
@@ -172,45 +261,111 @@ if (!function_exists( 'add_action' )) {
 
 	// Activate tooltips.
 	$(function() { $(".tooltip").tooltip(); });
-
-	// Show / hide certain input options.
-	var $form = $('#html-minifier-form-settings');
-	$form.find('label[rel]').each(function() {
-		var rel = this.getAttribute('rel'), $this = $(this),
-			$parent = $form.find('#'+rel).on('click',function(evt) {
-				if(this.hasAttribute('required')) {
-					alert("Comments must be removed using the current Compression Mode.");
-					return false;
-				}
-				
-				if(this.checked) {
-					$this.prev().show();
-					$this.slideDown(217).children('input').prop('disabled',false);
-				} else {
-					$this.slideUp(237,function() {
-						$this.prev().hide();
-					}).children('input').prop('disabled',true);
-				}
-			});
+	
+	// Make sure the tabbing in the page is correct as per the hash.
+	var $forms = $('form.nav-tabbed').hide(),
+		$nav_tabs = $(".nav-tab-wrapper").children(".nav-tab");
+		
+	$nav_tabs.each(function(i,e) {
+		if(!window.location.hash) {
+			var hash = $nav_tabs.first().addClass('nav-tab-active').get(0).hash;
+			$(hash).show();
+		} else if(e.hash === window.location.hash) {
+			$(this).addClass('nav-tab-active');
+			$(e.hash).show();
+		}
+	}).on('click',function(e) {
+		e.preventDefault();
+		$nav_tabs.removeClass("nav-tab-active");
+		$(this).addClass("nav-tab-active");
+		$forms.hide().filter(this.hash).show();
+		document.activeElement.blur();
 	});
 	
-	// Auto-check remove comments in CSS and JS if we select all_whitespace for compression.
-	var $clean_js_comments = $(document.getElementById("clean_js_comments")),
-		$clean_css_comments = $(document.getElementById("clean_css_comments"));
-	$(document.getElementById("compression_mode")).on('change',function(e){
-		if(this.value === 'all_whitespace') {
-			if(!$clean_js_comments.prop('checked')) $clean_js_comments.trigger('click');
-			if(!$clean_css_comments.prop('checked')) $clean_css_comments.trigger('click');
-			$clean_js_comments.attr('required','required');
-			$clean_css_comments.attr('required','required').on('click',function(e) { 
-				alert("Comments must be removed using the current Compression Mode.");
-				return false;
-			});
-		} else {
-			$clean_js_comments.removeAttr("required");
-			$clean_css_comments.removeAttr("required").off('click');
-		}
-	}).trigger('change');
+	// For the button in the cache tab.
+	$(document.getElementById("cache-back-to-minify")).on('click',function(e) { 
+		e.preventDefault();
+		$nav_tabs.eq(0).trigger('click');
+	});
+
+	// Dynamic stuff for the Minify Options form.
+	(function MinifyOptionsForm($) {
+		
+		// Variable containing all form options.
+		var $options = {
+			'clean_html_comments': $(document.getElementById("clean_html_comments")),
+			'show_signature': $(document.getElementById("show_signature")),
+			'clean_css_comments': $(document.getElementById("clean_css_comments")),
+			'shift_link_tags_to_head': $(document.getElementById("shift_link_tags_to_head")),
+			'shift_style_tags_to_head': $(document.getElementById("shift_style_tags_to_head")),
+			'combine_style_tags': $(document.getElementById("combine_style_tags")),
+			'clean_js_comments': $(document.getElementById("clean_js_comments")),
+			'remove_comments_with_cdata_tags': $(document.getElementById("remove_comments_with_cdata_tags")),
+			'compression_ignore_script_tags': $(document.getElementById("compression_ignore_script_tags")),
+			'shift_script_tags_to_bottom': $(document.getElementById("shift_script_tags_to_bottom"))
+		};
+		
+		// Show / hide certain input options for the minify portion.
+		var $form = $('#minify-options');
+		$form.find('label[rel]').each(function() {
+			var rel = this.getAttribute('rel'), $this = $(this),
+				$parent = $form.find('#'+rel).on('click',function(evt) {
+					if(this.hasAttribute('required')) {
+						alert("Javascript / CSS comments must be removed using the current Compression Mode.");
+						return false;
+					}
+					
+					if(this.checked) {
+						$this.prev().show();
+						$this.slideDown(217).children('input').prop('disabled',false);
+					} else {
+						$this.slideUp(237,function() {
+							$this.prev().hide();
+						}).children('input').prop('disabled',true);
+					}
+				});
+		});
+		
+		// Auto-check remove comments in CSS and JS if we select all_whitespace for compression.			
+		$(document.getElementById("compression_mode")).on('change',function(e){
+			if(this.value === 'all_whitespace') {
+				if(!$options.clean_js_comments.prop('checked')) $options.clean_js_comments.trigger('click');
+				if(!$options.clean_css_comments.prop('checked')) $options.clean_css_comments.trigger('click');
+				$options.clean_js_comments.attr('required','required');
+				$options.clean_css_comments.attr('required','required').on('click',function(e) { 
+					alert("Javascript / CSS comments must be removed using the current Compression Mode.");
+					return false;
+				});
+			} else {
+				$options.clean_js_comments.removeAttr("required");
+				$options.clean_css_comments.removeAttr("required").off('click');
+			}
+		}).trigger('change');
+		
+	})(jQuery);
 	
+	// Cache Options form.
+	/*
+	(function CacheOptionsForm($) {
+		
+		function ToggleEnableCaching(e) {
+			if($enable_caching.prop("checked")) {
+				$rel.prop("disabled",false);
+				$th_row.removeAttr('style');
+			} else {
+				$rel.prop("disabled",true);
+				$th_row.css('','#ccc');
+			}
+		}
+		
+		var $form = $('#caching-options'),
+			$rel = $form.find('[rel="enable_caching"]'),
+			$th_row = $form.find('.enable_caching'),
+			$enable_caching = $(document.getElementById('enable_caching')).on('click',ToggleEnableCaching);
+		
+		ToggleEnableCaching();
+		
+	})(jQuery);
+	*/
 })(jQuery);
 </script>
