@@ -8,9 +8,11 @@ is fine.
 
 @author		Terence Pek <mail@terresquall.com>
 @website	www.terresquall.com
-@version	2.0.4
-@dated		28/08/2017
-@notes		Made $CacheFolder more lenient with directory separators.
+@version	2.0.5
+@dated		05/09/2017
+@notes		Resolved a few bugs with whitespace being left behind if you choose to not compress script tags.
+			Fixed a bug that caused chunks of non-conditional commented content to be removed.
+			- Made $CacheFolder more lenient with directory separators.
 			- Force comment cleaning for 'all_whitespace' compression mode. 
 			- Fixed a bug with script tags inside conditional comments.
 			- Added a caching function for v2.0.1.
@@ -21,7 +23,7 @@ class HTMLMinifier {
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '2.0.4';
+	const VERSION = '2.0.5';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -118,8 +120,8 @@ class HTMLMinifier {
 			$options['clean_css_comments'] = true;
 		}
 		
-		// Pull out all the conditional code.
-		$cond_scripts = array(); // Scripts inside IE conditional tags.
+		// Pull out all conditional elements.
+		$cond_scripts = array(); // Elements inside IE conditional tags.
 		preg_match_all('@(<\\!(?:--)?\\[if [\s\S]*?\\]>(?:<\\!-->)?)([\s\S]*?)((?:<!--)?\\<!\\[endif\\](?:--)?\\>)@i',$html,$cond_scripts);
 		
 		// Pull out all the script tags.
@@ -134,6 +136,8 @@ class HTMLMinifier {
 					$scripts[$ks][1] = $cond_scripts[1][$kc] . $scripts[$ks][1];
 					$scripts[$ks][3] .= $cond_scripts[3][$kc];
 					$scripts[$ks][0] = $scripts[$ks][1] . $scripts[$ks][2] . $scripts[$ks][3];
+					$scripts[$ks][4] = $cond_scripts[1][$kc];
+					$scripts[$ks][5] = $cond_scripts[3][$kc];
 				}
 			}
 		}
@@ -169,8 +173,11 @@ class HTMLMinifier {
 		}
 		
 		// Remove empty conditional tags.
-		$out = preg_replace('@ ?<\\!(--)?\\[if [\s\S]*?\\]>(?:<\\!-->)?(\s*?)(<!--)?\\<!\\[endif\\](--)?\\> ?@i','',$out);
-		
+		//$out = preg_replace('@ ?<\\!(--)?\\[if [\s\S]*?\\]>(?:<\\!-->)?(\s*?)(<!--)?\\<\\!\\[endif\\](--)?\\> ?@i','',$out);
+		foreach($scripts as $s) {
+			if(isset($s[4])) $out = preg_replace('@'.preg_quote($s[4]) . "\\s*?" . preg_quote($s[5]).'@','',$out);
+		}
+
 		// Signs off before the HTML closing tag.
 		if($options['show_signature']) {
 			self::$Signature = sprintf(self::SIGNATURE, $startLen, strlen($out));
@@ -340,7 +347,8 @@ class HTMLMinifier {
 		$l = preg_match_all('%(\\<script\\s?[\\s\\S]*?\\>)(\\</script\\>)%i',$html,$matches);
 		
 		// For detecting errors in reinjection.
-		if($l !== count($scripts)) die('HTMLMinifier::process_script_options() script error: Number of input and output script tags are different.');
+		if($l !== count($scripts))
+			trigger_error('HTMLMinifier::process_script_options() script error: Number of input and output script tags are different.');
 		
 		if($options['shift_script_tags_to_bottom']) {
 			
@@ -351,11 +359,14 @@ class HTMLMinifier {
 				
 				// Remove all <script> tags that do not have an SRC attribute, or do not contain Javascript.
 				// Also preps the data into different arrays for easier organisation later.
+				
 				for($i=0;$i < $l;$i++) {
 					
 					// Remove all of the old <script> tags as they will be moved to the bottom.
 					$pos = strpos($html,$matches[0][$i]);
-					$html = substr_replace($html,'',$pos,strlen($matches[0][$i]));
+					$strlen = strlen($matches[0][$i]);
+					while(ctype_space(substr($html,$pos+$strlen,1))) $strlen++; // Remove spaces left behind by the scripts.
+					$html = substr_replace($html,'',$pos,$strlen);
 					
 					// If this is a conditional script tag, classify it.
 					if(preg_match('/^<\\!(--)?\\[if/i',$scripts[$i][1])) {
@@ -409,7 +420,6 @@ class HTMLMinifier {
 					}
 					
 				}
-			
 			}
 		} else {
 			
@@ -428,28 +438,9 @@ class HTMLMinifier {
 		switch($type) {
 		case 'all_whitespace_not_newlines':
 		case 'pretty_indent':
-			/*$out = preg_replace_callback(
-				'@(?<!^)\\</?([a-z]+)(\\s+[\\s\\S]+?)?\\>@im',
-				function($r) { return PHP_EOL . $r[0]; },
-				preg_replace("/^\\s+|\\s+$/m",'',$out)
-			);*/
-			$out = preg_replace("/^\\s+|\\s+$/m",'',$out);/*
-			if($type === 'pretty_indent') {
-				$lines = preg_split('/$\\R?^/m',$out);
-				$tabs = -1;
-				foreach($lines as $k => $l) {
-					$match = array();
-					if(preg_match('/^<([a-z]+)/i',$l,$match)) {
-						$tabs++;
-					} elseif(true) {
-						
-					}
-					for($i=0;$i<$tabs;$i++) $lines[$k] = "\t" . $lines[$k];
-				}
-			}*/
+			$out = preg_replace("/^\\s+|\\s+$/m",'',$out);
 			return $out; // This regex removes all indentations and empty lines.
 		case 'all_whitespace':
-			//$out = str_replace(PHP_EOL,'',$out); // Doesn't work with Wordpress source for some reason.
 			return preg_replace('/\\s+/m',' ',$out); // Temporary fix for Wordpress source.
 			// Can implement regex to clean whitespace between html tags instead to clear this newline problem. Then Javascript / CSS will have their separate newline handlers.
 		}

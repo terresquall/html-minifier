@@ -72,18 +72,19 @@ class HTMLMinifier_Admin {
 			
 			switch(self::save_options($_POST)) {
 			case 1:
-				$GLOBALS[$p . 'settings_notice_message'] = 'Settings have been successfully saved and updated.';
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Settings have been successfully saved and updated.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 				break;
 			case -1:
-				$GLOBALS[$p . 'settings_notice_message'] = 'Your settings have been restored to the defaults.';
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your settings have been modified to the preset options.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 				break;
 			case 0:
-				$GLOBALS[$p . 'settings_notice_message'] = 'No changes have been made.';
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> No changes have been made.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated error is-dismissible';
 				break;
 			}
+			
 		} elseif(isset($_POST[$p.'feedback_nonce']) && wp_verify_nonce($_POST[$p.'feedback_nonce'],$p.'feedback_nonce')) { // Nonce for feedback.
 			
 			$curr_user = wp_get_current_user();
@@ -97,10 +98,10 @@ class HTMLMinifier_Admin {
 			);
 			
 			if($b) {
-				$GLOBALS[$p . 'settings_notice_message'] = 'Your feedback has been sent to us. Thank you for taking your time out to do this.';
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your feedback has been sent. Thank you for taking your time out to help improve this plugin.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 			} else {
-				$GLOBALS[$p . 'settings_notice_message'] = 'There has been an error and your feedback has <strong>not</strong> been sent. Please resend it.';
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> There has been an error and your feedback has <strong>not</strong> been sent.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated error is-dismissible';
 				$GLOBALS[$p . 'feedback_error_message'] = esc_textarea($_POST['feedback-text']);
 			}

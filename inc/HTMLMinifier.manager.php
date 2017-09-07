@@ -16,8 +16,8 @@ class HTMLMinifier_Manager {
 		// Get defaults from the HTMLMinifier class, then append an additional option to it.
 		self::$Defaults = array_merge(HTMLMinifier::$Defaults,array('minify_wp_admin' => false));
 		
-		// Start obfuscation.
-		self::ob_start();
+		load_plugin_textdomain('html-minifier', false, 'languages'); // Multi-language support text domain.
+		self::ob_start(); // Start obfuscation.
 	}
 	
 	public static function ob_start() {

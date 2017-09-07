@@ -1,0 +1,294 @@
+# Copyright (C) 2017 HTML Minifier
+# This file is distributed under the same license as the HTML Minifier package.
+msgid ""
+msgstr ""
+"Project-Id-Version: HTML Minifier 1.1.1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/html-minifier\n"
+"POT-Creation-Date: 2017-08-29 07:24:51+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2017-08-29 15:30+0800\n"
+"Last-Translator: Terence Pek <terence@terresquall.com>\n"
+"Language-Team: Chinese <terence@terresquall.com>\n"
+
+#: inc/HTMLMinifier.admin.php:75
+msgid "Settings have been successfully saved and updated."
+msgstr "设置已成功保存。"
+
+#: inc/HTMLMinifier.admin.php:79
+msgid "Your settings have been modified to the preset options."
+msgstr "设置已修改为预设选项。"
+
+#: inc/HTMLMinifier.admin.php:83
+msgid "No changes have been made."
+msgstr "设置没有更改。"
+
+#: inc/HTMLMinifier.admin.php:101
+msgid "Your feedback has been sent. Thank you for taking your time out to help improve this plugin."
+msgstr "您的反馈已发送。 感谢您抽出时间帮助改进此插件。"
+
+#: inc/HTMLMinifier.admin.php:104
+msgid "There has been an error and your feedback has <strong>not</strong> been sent."
+msgstr "发生错误，您的反馈<strong>尚未</strong>发送。"
+
+#: inc/HTMLMinifier.admin.php:110
+msgid "HTML Minifier"
+msgstr "HTML Minifier"
+
+#: inc/HTMLMinifier.admin.php:114 views/settings-main.php:7
+msgid "Settings"
+msgstr "设置"
+
+#: views/settings-main.php:14
+msgid "Plugin Version"
+msgstr "插件版本"
+
+#: views/settings-main.php:18
+msgid "Release Date"
+msgstr "发布日期"
+
+#: views/settings-main.php:22
+msgid "Minifier Version"
+msgstr "精简机版本"
+
+#: views/settings-main.php:26
+msgid "Support"
+msgstr "支持"
+
+#: views/settings-main.php:27
+msgid "Donate"
+msgstr "捐款"
+
+#: views/settings-main.php:31
+msgid "Minification Options"
+msgstr "精简选项"
+
+#: views/settings-main.php:32
+msgid "Caching Options"
+msgstr "缓存选项"
+
+#: views/settings-main.php:39
+msgid "General Options"
+msgstr "一般选项"
+
+#: views/settings-main.php:42 views/settings-main.php:61
+#: views/settings-main.php:92 views/settings-main.php:146
+msgid "Options"
+msgstr "选项"
+
+#: views/settings-main.php:43
+msgid "Removes all HTML comments, except those with conditional tags."
+msgstr "除了条件标签, 删除所有HTML注释。"
+
+#: views/settings-main.php:46
+msgid "Remove HTML comments"
+msgstr "删除 HTML 注释"
+
+#: views/settings-main.php:49
+msgid "Adds a HTML comment about this plugin at the end of the minified source."
+msgstr "在源码末尾添加有关此插件的 HTML 注释。"
+
+#: views/settings-main.php:52
+msgid "Show signature in source"
+msgstr "显示插件签名"
+
+#: views/settings-main.php:58
+msgid "Stylesheet Optimisation"
+msgstr "CSS 优化"
+
+#: views/settings-main.php:62
+msgid "Removes all comments in CSS embedded on the page."
+msgstr "删除页面所有 CSS 注释。"
+
+#: views/settings-main.php:65
+msgid "Remove comments in <code>&lt;style&gt;</code> tags"
+msgstr "删除 <code>＆lt;style＆gt;</code> 标签中的注释"
+
+#: views/settings-main.php:68
+msgid "Includes all &lt;link&gt; tags outside of &lt;head&gt;. Only works on stylesheet &lt;link&gt; tags."
+msgstr "包括所有 ＆lt;head＆gt; 之外的 ＆lt;link＆gt; 标签。 仅适用于 CSS ＆lt;link＆gt; 标签。"
+
+#: views/settings-main.php:71
+msgid "Shift all <code>&lt;link&gt;</code> stylesheet tags into <code>&lt;head&gt;</code>"
+msgstr "将所有 <code>＆lt;link＆gt;</code> CSS 标签移到 <code>＆lt;head＆gt;</code> 标签内"
+
+#: views/settings-main.php:74
+msgid "Includes all &lt;style&gt; tags outside of &lt;head&gt;."
+msgstr "包括所有 ＆lt;head＆gt; 之外的 ＆lt;style＆gt; 标签。"
+
+#: views/settings-main.php:77
+msgid "Shift all <code>&lt;style&gt;</code> tags into <code>&lt;head&gt;</code>"
+msgstr "将所有 <code>＆lt;style＆gt;</ code> 标签移到 <code>＆lt;head＆gt;</code> 标签内"
+
+#: views/settings-main.php:80
+msgid "Combines CSS in the separate &lt;style&gt; tags across the document together. Will not combine tags with different media attributes."
+msgstr "在页里所有单独 ＆lt;style＆gt; 中的 CSS 组合在一个标签下。 不会组合不同 media attributes 的标签。"
+
+#: views/settings-main.php:83
+msgid "Combine CSS in <code>&lt;style&gt;</code> tags"
+msgstr "把不同的 <code>＆lt;style＆gt;</ code> 标签中组合成一"
+
+#: views/settings-main.php:89
+msgid "Script Optimisation"
+msgstr "代码优化"
+
+#: views/settings-main.php:89
+msgid "If your code breaks after activating the plugin, try checking only the default options in this section (i.e. remove Javascript comments and don't compress &lt;script&gt; contents)."
+msgstr ""
+
+#: views/settings-main.php:94
+msgid "Removes all comments in Javascript embedded on the page."
+msgstr ""
+
+#: views/settings-main.php:97
+msgid "Remove Javascript comments"
+msgstr ""
+
+#: views/settings-main.php:100
+msgid "In XHTML, content inside &lt;script&gt; tags are encapsulated with opening and closing CDATA tags that are commented out. This makes the document XML-compatible, so comments containing CDATA tags should not be removed."
+msgstr ""
+
+#: views/settings-main.php:103
+msgid "Remove comments containing CDATA tags"
+msgstr ""
+
+#: views/settings-main.php:106
+msgid "If your Javascript code isn't properly-written, i.e. your lines are not properly truncated with semi-colons, check this to ignore compressing them."
+msgstr ""
+
+#: views/settings-main.php:109
+msgid "Don't compress content in <code>&lt;script&gt;</code> tags."
+msgstr ""
+
+#: views/settings-main.php:112
+msgid "Moves all existing &lt;script&gt; tags in the page to the bottom. Might cause on-page Javascript to break, depending on how your page is scripted."
+msgstr ""
+
+#: views/settings-main.php:115
+msgid "Shift all <code>&lt;script&gt;</code> tags to the end of <code>&lt;body&gt;</code>"
+msgstr ""
+
+#: views/settings-main.php:118
+msgid "Only applicable for &lt;script&gt; tags with an unspecified MIME type or of MIME type &quot;text/javascript&quot;."
+msgstr ""
+
+#: views/settings-main.php:121
+msgid "Combine Javascript in <code>&lt;script&gt;</code> tags"
+msgstr ""
+
+#: views/settings-main.php:127
+msgid "Compression Mode"
+msgstr ""
+
+#: views/settings-main.php:141
+msgid "Minify WP-Admin Source"
+msgstr ""
+
+#: views/settings-main.php:142
+msgid "Experimental feature. If you run into bugs, it might mess up certain features in WP-Admin!"
+msgstr ""
+
+#: views/settings-main.php:147
+msgid "If this messes up your installation, come back to this page to uncheck it. Or disable this plugin."
+msgstr ""
+
+#: views/settings-main.php:150
+msgid "Might cause WP-Admin to become unusable"
+msgstr ""
+
+#: views/settings-main.php:156
+msgid "Quick Presets"
+msgstr ""
+
+#: views/settings-main.php:157
+msgid "Don't know how to setup? Try these presets."
+msgstr ""
+
+#: views/settings-main.php:160
+msgid "Super Safe"
+msgstr ""
+
+#: views/settings-main.php:160 views/settings-main.php:161
+#: views/settings-main.php:162 views/settings-main.php:163
+msgid "Are you sure? Your current settings will be lost."
+msgstr ""
+
+#: views/settings-main.php:160
+msgid "Only the absolute safest minification options are selected."
+msgstr ""
+
+#: views/settings-main.php:161
+msgid "Safe (Default)"
+msgstr ""
+
+#: views/settings-main.php:161
+msgid "Default settings that the plugin comes with."
+msgstr ""
+
+#: views/settings-main.php:162
+msgid "Moderate"
+msgstr ""
+
+#: views/settings-main.php:162
+msgid "Only the riskiest options are left out."
+msgstr ""
+
+#: views/settings-main.php:163
+msgid "Fully-Optimised"
+msgstr ""
+
+#: views/settings-main.php:163
+msgid "Optimises everything. 'Nuff said."
+msgstr ""
+
+#: views/settings-main.php:169
+msgid "Save Changes"
+msgstr ""
+
+#: views/settings-main.php:178
+msgid "Feature coming soon!"
+msgstr ""
+
+#: views/settings-main.php:182
+msgid "&larr; Back to Minification Options"
+msgstr ""
+
+#: views/settings-main.php:251
+msgid "Feedback &amp; Bug Reporting"
+msgstr ""
+
+#: views/settings-main.php:253
+msgid "HTML Minifier strives to be a useful, lightweight and no-frills plugin that helps to minify the HTML output of your site. Let us know if you find any bugs with the plugin, have suggestions on how we can improve, or if there are additional features you'd like to see in future versions."
+msgstr ""
+
+#: views/settings-main.php:257
+msgid "Speak away!"
+msgstr ""
+
+#: views/settings-main.php:262
+msgid "Send Your Feedback"
+msgstr ""
+
+#: views/settings-main.php:322 views/settings-main.php:344
+msgid "Javascript / CSS comments must be removed using the current Compression Mode."
+msgstr ""
+#. Plugin Name of the plugin/theme
+msgid "HTML Minifier"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.terresquall.com/web/html-minifier/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Minifies the HTML output of your Wordpress site, without any caveats. There are no embedded ads, no feature that is pay-to-use, no tricky money-making mechanisms. Just a source-minifying tool that tries to be as simple and useful as possible."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Terresquall"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://www.terresquall.com/"
+msgstr ""
