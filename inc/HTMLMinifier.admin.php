@@ -11,66 +11,107 @@ also the post requests for updating options and processing user feedback.
 */
 class HTMLMinifier_Admin {
 	
+	const OPTIONS = 'html-minifier-options';
+	
 	public static function init() {
+		
+		// If it is a REST request, handle it here.
+		if(preg_match('@^options\\-general\\.php\\?page\\='.preg_quote(self::OPTIONS).'\\&rest\\=([a-z]+)$@i',basename($_SERVER['REQUEST_URI']),$match)) {
+
+			switch($_SERVER['REQUEST_METHOD']) {
+			case 'GET': // retrieve
+				$key = $match[1];
+				if($key === 'presets') {
+					echo json_encode(array(
+						'super_safe' => HTMLMinifier::get_presets('super_safe'),
+						'safe' => HTMLMinifier::get_presets('safe'),
+						'moderate' => HTMLMinifier::get_presets('moderate'),
+						'fully_optimised' => HTMLMinifier::get_presets('fully_optimised')
+					));
+				} else {
+					if(array_key_exists($key,HTMLMinifier_Manager::$CurrentOptions))
+						echo json_encode(HTMLMinifier_Manager::$CurrentOptions[$key]);
+					else
+						echo json_encode(HTMLMinifier_Manager::$CurrentOptions);
+				}
+				exit;
+			case 'PUT': // update
+			case 'POST': // create
+				if(!is_user_logged_in()) exit; // Cannot save if you are not logged into wp_admin.
+				$data = json_decode(file_get_contents("php://input"),true);
+				//file_put_contents(__DIR__.'/'.$_SERVER['REQUEST_METHOD'].'.txt',json_encode($data,JSON_PRETTY_PRINT));
+				self::save_options($data,$match[1]);
+				exit;
+			case 'DELETE': // delete.
+			}
+			exit;
+		}
+		
+		// Otherwise add the other hooks.
 		add_action('admin_menu', array('HTMLMinifier_Admin','admin_menu'));
 		add_action('admin_enqueue_scripts', array('HTMLMinifier_Admin','admin_enqueue_scripts'));
 		add_filter('plugin_action_links_html-minifier/html-minifier.php', array('HTMLMinifier_Admin', 'admin_plugin_settings_link' ));
 	}
 	
 	// Takes the $_POST array and processes information in it that relates to HTML Minifier settings.
-	public static function save_options($post) {
+	public static function save_options($post, $option_type = 'core') {
 		
-		// If restore default button is pressed, restore the default settings.
-		if(isset($post['restore_default'])) {
-			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::$Defaults;
-			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+		// Check if $option_type is valid. Otherwise, terminate this.
+		if(!array_key_exists($option_type,HTMLMinifier_Manager::$Defaults)) return 0;
+		
+		// To handle post reset options when you do a non-AJAX query.
+		if(isset($post['safe'])) {
+			if(HTMLMinifier_Manager::update_options(HTMLMinifier_Manager::get_presets('safe'))) return -1;
 			else return 0;
 		} elseif(isset($post['super_safe'])) {
-			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('super_safe');
-			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			if(HTMLMinifier_Manager::update_options(HTMLMinifier_Manager::get_presets('super_safe'))) return -1;
 			else return 0;
 		} elseif(isset($post['moderate'])) {
-			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('moderate');
-			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			if(HTMLMinifier_Manager::update_options(HTMLMinifier_Manager::get_presets('moderate'))) return -1;
 			else return 0;
 		} elseif(isset($post['fully_optimised'])) {
-			HTMLMinifier_Manager::$CurrentOptions = HTMLMinifier_Manager::get_presets('fully_optimised');
-			if(update_option(HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'options',HTMLMinifier_Manager::$CurrentOptions)) return -1;
+			if(HTMLMinifier_Manager::update_options(HTMLMinifier_Manager::get_presets('fully_optimised'))) return -1;
+			else return 0;
+		} elseif(isset($post['restore_defaults_manager'])) {
+			$options = HTMLMinifier_Manager::$CurrentOptions;
+			$options['manager'] = HTMLMinifier_Manager::$ManagerDefaults;
+			if(HTMLMinifier_Manager::update_options($options)) return -2;
 			else return 0;
 		}
 		
-		// Loops through each of the post entries to check and sanitize them.
-		foreach($post as $k => $v) {
-			// Remove post entries that are not used by HTMLMinifier (e.g. "submit" value, nonces, user-hacked entries).
-			if(!array_key_exists($k,HTMLMinifier_Manager::$Defaults)) unset($post[$k]);
-			
-			// Sanitizes post entries based on how they are used in HTMLMinifier.
-			switch($k) {
-			default:
-				// Sanitization for other types will be added when HTMLMinifier starts using them.
-				if(gettype(HTMLMinifier_Manager::$Defaults[$k]) === 'boolean')
-					$post[$k] = 1; // Force value to 1, in case of user hijack. Value won't be there if the checkbox is unchecked, so no need to sanitize 0s.
-				
-				break;
-			
-			case 'compression_mode':
-				// If the submitted compression mode is not valid, then force it to the default.
-				if(!array_key_exists($v,HTMLMinifier::$CompressionMode) || gettype($v) !== 'string')
-					$post[$k] = HTMLMinifier_Manager::$Defaults[$k];
-			}
+		// Organise post fields into the appropriate arrays for saving.
+		// Don't worry about sanitization, because update_options() below cleans up the extra post attributes.
+		$options = HTMLMinifier_Manager::$CurrentOptions;
+		
+		// Determine which data array we are writing to.
+		if(isset($post['submit-manager'])) $option_type = 'manager';
+		foreach(HTMLMinifier_Manager::$Defaults[$option_type] as $k => $v) {
+			if(array_key_exists($k,$post))
+				$options[$option_type][$k] = $post[$k];
+			elseif(gettype($v) === 'boolean')
+				$options[$option_type][$k] = false;
 		}
 		
-		HTMLMinifier_Manager::$CurrentOptions = $post;
-		return update_option( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX . 'options',$post) ? 1 : 0;
+		return HTMLMinifier_Manager::update_options($options,true) ? 1 : 0;
 	}
 	
 	public static function admin_menu() {
-		$p = HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX;
 		
-		// Nonce for settings change.
-		if(isset($_POST[$p.'settings_nonce']) && wp_verify_nonce($_POST[$p.'settings_nonce'],$p.'settings_nonce')) {			
+		// Listen for posts from HTML Minifier settings. Maybe can change it into an action hook in future.
+		self::admin_post_update_settings($_POST);
+		
+		// Options page on the navigation bar.
+		add_options_page(__('HTML Minifier','html-minifier'), __('HTML Minifier','html-minifier'), 'manage_options', self::OPTIONS, array('HTMLMinifier_Admin','display_settings'));
+	}
+	
+	// Handles post request from HTML Minifier settings page (if any).
+	private static function admin_post_update_settings($post) {
+		
+		$p = HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX;
+		// Nonce for settings update.
+		if(isset($post[$p.'settings_nonce']) && wp_verify_nonce($post[$p.'settings_nonce'],$p.'settings_nonce')) {			
 			
-			switch(self::save_options($_POST)) {
+			switch(self::save_options($post)) {
 			case 1:
 				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Settings have been successfully saved and updated.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
@@ -79,13 +120,17 @@ class HTMLMinifier_Admin {
 				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your settings have been modified to the preset options.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 				break;
+			case -2:
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your settings have been reset to the defaults.','html-minifier');
+				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
+				break;
 			case 0:
 				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> No changes have been made.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated error is-dismissible';
 				break;
 			}
 			
-		} elseif(isset($_POST[$p.'feedback_nonce']) && wp_verify_nonce($_POST[$p.'feedback_nonce'],$p.'feedback_nonce')) { // Nonce for feedback.
+		} elseif(isset($post[$p.'feedback_nonce']) && wp_verify_nonce($post[$p.'feedback_nonce'],$p.'feedback_nonce')) { // Nonce for feedback.
 			
 			$curr_user = wp_get_current_user();
 			$from_header = $curr_user->user_login . '<' . $curr_user->user_email . '>';
@@ -93,32 +138,44 @@ class HTMLMinifier_Admin {
 			$b = wp_mail(
 				'Terresquall <mail@terresquall.com>',
 				'Feedback from <'.get_bloginfo('name').'>',
-				esc_html($_POST['feedback-text']),
+				esc_html($post['feedback-text']),
 				'Reply-To: ' . $from_header . PHP_EOL . 'From: ' . $from_header . PHP_EOL
 			);
 			
-			if($b) {
-				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your feedback has been sent. Thank you for taking your time out to help improve this plugin.','html-minifier');
-				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
+			if(isset($post['ajax'])) {
+				if($b)
+					_e('<strong>HTML Minifier:</strong> Your feedback has been sent. Thank you for taking your time out to help improve this plugin.','html-minifier');
+				else
+					_e('<strong>HTML Minifier:</strong> There has been an error and your feedback has <strong>not</strong> been sent.','html-minifier');
+				exit;
 			} else {
-				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> There has been an error and your feedback has <strong>not</strong> been sent.','html-minifier');
-				$GLOBALS[$p . 'settings_notice_class'] = 'updated error is-dismissible';
-				$GLOBALS[$p . 'feedback_error_message'] = esc_textarea($_POST['feedback-text']);
+				if($b) {
+					$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your feedback has been sent. Thank you for taking your time out to help improve this plugin.','html-minifier');
+					$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
+				} else {
+					$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> There has been an error and your feedback has <strong>not</strong> been sent.','html-minifier');
+					$GLOBALS[$p . 'settings_notice_class'] = 'updated error is-dismissible';
+					$GLOBALS[$p . 'feedback_error_message'] = esc_textarea($post['feedback-text']);
+				}
 			}
 		}
-		
-		add_options_page(__('HTML Minifier','html_minifier'), __('HTML Minifier','html_minifier'), 'manage_options', 'html-minifier-options', array('HTMLMinifier_Admin','display_settings'));
 	}
 	
+	// Adds link to the settings page in the plugin manager page.
 	public static function admin_plugin_settings_link($links) { 
 		$settings_link = '<a href="'.esc_url(admin_url('options-general.php?page=html-minifier-options')).'">'.__('Settings', 'html-minifier').'</a>';
 		array_unshift( $links, $settings_link ); 
 		return $links; 
 	}
 	
-	public static function admin_enqueue_scripts() {
-		wp_enqueue_style('jquery-ui-tooltip-css',HTML_MINIFIER__PLUGIN_URL.'views/jquery-ui-tooltip.css',false,PLUGIN_VERSION,false);
-		wp_enqueue_script('jquery-ui-tooltip');
+	// Enqueue scripts for the settings page.
+	public static function admin_enqueue_scripts($page) {
+		if($page === 'settings_page_html-minifier-options') {
+			wp_enqueue_style('jquery-ui-tooltip-css',HTML_MINIFIER__PLUGIN_URL.'views/lib/jquery-ui-tooltip.css',false,HTML_MINIFIER_PLUGIN_VERSION,false);
+			wp_enqueue_style('settings-main-css',HTML_MINIFIER__PLUGIN_URL.'views/lib/settings.css',false,HTML_MINIFIER_PLUGIN_VERSION,false);
+			wp_enqueue_script('jquery-ui-tooltip');
+			wp_enqueue_script('html-minifier-settings',HTML_MINIFIER__PLUGIN_URL.'views/lib/settings.js',array('backbone'),HTML_MINIFIER_PLUGIN_VERSION,true);
+		}
 	}
 	
 	public static function display_settings() {
@@ -126,4 +183,3 @@ class HTMLMinifier_Admin {
 		include $file;
 	}
 }
-?>

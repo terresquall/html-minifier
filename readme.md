@@ -2,9 +2,9 @@
 
 Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, html optimiser
-Requires at least: 3.2
-Tested up to: 4.8.1
-Stable tag: 1.1.1
+Requires at least: 3.5
+Tested up to: 4.9.1
+Stable tag: 2.0.0
 License: GPLv2 or later
 
 A server-side source code minifier for Wordpress, HTML Minifier is designed to minimise and optimise HTML output.
@@ -15,13 +15,21 @@ HTML Minifier is a server-side source code minifier that is available both as a 
 
 A variety of optimisation options and minification styles are available in the plugin, and they can be selected from or toggled depending on the user's needs. To see the full list of options or to download the PHP version, [click here](http://www.terresquall.com/web/html-minifier/).
 
-There is also a [GitHub repository](https://github.com/terresquall/html-minifier) for the project, if you want to contribute.
+There is also a [GitHub repository](https://github.com/terresquall/html-minifier) for the project, if you want to contribute. Alternatively, [donations](https://paypal.me/Terresquall) are also always welcome.
 
 == Installation ==
 
 Unzip the downloaded file into the plugin folder in your blog and activate it in WP-Admin. Alternatively, you can just download it directly from WP-Admin and activate it.
 
 == Changelog ==
+
+= 2.0.0 =
+*Release Date - 25 December 2017*
+
+* Completely recoded the source PHP class HTMLMinifier. Now, it isn't dependent on PHP's DOMDocument class, which caused some strange behaviours (like changing double quotes to single quotes, or encoding some UTF-8 characters wrongly.
+* Added a lot of new control options for minifying your HTML, and made the Settings page more seamless (it works on Backbone now!).
+* Features to expect in the future: 1) more selective HTML shifting options, such as excluding certain <script> tags (like HTML5 Shiv) when moving them to the bottom, 2) 'ligtening' Wordpress by removing certain tags and includes that are generally not very useful.
+* As usual, please help to report if there are any bugs you find. The source has been completely recoded, so there are bound to be bugs.
 
 = 1.1.1 =
 *Release Date - 5 September 2017*
