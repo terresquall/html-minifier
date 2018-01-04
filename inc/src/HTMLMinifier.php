@@ -8,9 +8,10 @@ is fine.
 
 @author		Terence Pek <terence@terresquall.com>
 @website	www.terresquall.com
-@version	3.0.0
-@dated		25/12/2017
-@notes		- Make get_tags() handle nested tags.
+@version	3.0.1
+@dated		03/01/2018
+@notes		- Modified ::compress() so that it can now exclude tags from compression. Excluded <textarea> tags from being compressed.
+			- Make get_tags() handle nested tags.
 			Fixed a bug where any Javascript blocks with CDATA will not have their comments cleaned.
 			Resolved a few bugs with whitespace being left behind if you choose to not compress script tags.
 			Fixed a bug that caused chunks of non-conditional commented content to be removed.
@@ -25,7 +26,7 @@ class HTMLMinifier {
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '3.0.0';
+	const VERSION = '3.0.1';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -180,27 +181,15 @@ class HTMLMinifier {
 		
 		// Handling compression here.
 		if($options['compression_ignore_script_tags']) {
-			$scripts = self::get_tags('script',$out);
-			$scripts_content = array();
-			foreach($scripts[2] as $id => $s) {
-				if(empty($s)) continue;
-				$out = self::replace($s,"[htmlminifier_script[$id]]",$out);
-				$scripts_content[strval($id)] = $s;
-			}
-			
-			$out = self::compress($out,$options['compression_mode']);
-			
-			foreach($scripts_content as $id => $s)
-				$out = self::replace("[htmlminifier_script[$id]]",$s,$out);
-
-		} else $out = self::compress($out,$options['compression_mode']);
+			$out = self::compress($out,$options['compression_mode'],array('textarea','script'));
+		} else $out = self::compress($out,$options['compression_mode'],array('textarea'));
 				
 		// Replace all the comments that are saved.
 		if(preg_match_all('@<!-- \\[htmlminifier\\[([0-9a-z]*)\\]\\] -->@i',$out,$tagged_comments)) {
 			foreach($tagged_comments[0] as $k => $tc) {
 				if(array_key_exists($tagged_comments[1][$k],$comments)) {
 					$new_comment = $comments[$tagged_comments[1][$k]];
-					if(substr($tagged_comments[1][$k],-1) === 'c') $new_comment = self::compress($new_comment,$options['compression_mode']);
+					if(substr($tagged_comments[1][$k],-1) === 'c') $new_comment = self::compress($new_comment,$options['compression_mode'],array('textarea'));
 					$out = self::replace($tc,'<!--'.$new_comment.'-->',$out);
 				} else
 					$out = self::replace($tc,'',$out);
@@ -732,8 +721,6 @@ class HTMLMinifier {
 	}
 	
 	// Finds tags of a certain name and returns an array of matches.
-	// NOTE: Please remove all tags nested in comments before using this.
-	// DOES NOT WORK IF YOU HAVE THE SAME TAG NESTED WITHIN EACH OTHER.
 	private static function get_tags($tagName,$source,$disallowNesting = true) {
 		
 		switch(gettype($tagName)) {
@@ -853,16 +840,37 @@ class HTMLMinifier {
 	}
 	
 	// Given a compression string, returns compressed HTML output.
-	public static function compress($out,$type) {
+	// $excludedTags: Give an array of tags whose contents you don't want to compress.
+	public static function compress($out,$type,$excludedTags = null) {
+		
+		// Remove all tags that are excluded and replace them after compression.
+		if(is_array($excludedTags)) {
+			$substitutes = array();
+			$tags = self::get_tags($excludedTags,$out);
+			foreach($tags[0] as $k => $t) {
+				$out = self::replace($t,"<!-- [[ htmlminifier_compressed_$k ]] -->",$out);
+				$substitutes[$k] = $t;
+			}
+		}
+		
+		// Actual compression.
 		switch($type) {
 		case 'all_whitespace_not_newlines':
 		case 'pretty_indent':
 			$out = preg_replace("/^\\s+|\\s+$/m",'',$out);
-			return $out; // This regex removes all indentations and empty lines.
+			break;
 		case 'all_whitespace':
-			return preg_replace('/\\s+/m',' ',$out); // Temporary fix for Wordpress source.
-			// Can implement regex to clean whitespace between html tags instead to clear this newline problem. Then Javascript / CSS will have their separate newline handlers.
+			$out = preg_replace('/\\s+/m',' ',$out); // Temporary fix for Wordpress source.
+			break;
 		}
+		
+		// Return the substituted tags.
+		if(!empty($substitutes)) {
+			foreach($substitutes as $k => $t)
+				$out = self::replace("<!-- [[ htmlminifier_compressed_$k ]] -->",$t,$out);
+		}
+		
+		// Return the compressed contents.
 		return $out;
 	}
 	

@@ -426,7 +426,10 @@
 	});
 	
 	var QuickNotification = Backbone.View.extend({
-		el: '#QuickNotification',
+		
+		tagName: 'table',
+		id: 'QuickNotification',
+		template: _.template('<tr><td><p class="message"></p><a href="javascript:" role="close-btn">&times;</a></td></tr>'),
 		
 		defaultLifetime: 6442, // Open for 5 seconds, then auto-closes.
 		_isOpen: false,
@@ -435,8 +438,15 @@
 			'click a[role="close-btn"]': 'close'
 		},
 		
+		render: function() {
+			this.el.innerHTML = this.template();
+			document.body.appendChild(this.el);
+			return this;
+		},
+		
 		initialize: function() {
 			_.bindAll(this,'open','close');
+			this.render();
 			this.$messageContainer = this.$el.find('.message');
 		},
 		

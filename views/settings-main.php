@@ -5,8 +5,6 @@ if (!function_exists( 'add_action' )) {
 }
 ?><div class="wrap" id="SettingsView">
 	
-	<table id="QuickNotification"><tr><td><p class="message"></p><a href="javascript:" role="close-btn">&times;</a></td></tr></table>
-	
     <h1>HTML Minifier &mdash; <?= __('Settings','html-minifier'); ?></h1><?php
 		$p = HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX;
 		if(isset($GLOBALS[$p . 'settings_notice_message']) && isset($GLOBALS[$p . 'settings_notice_class']))
