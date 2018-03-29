@@ -8,9 +8,11 @@ is fine.
 
 @author		Terence Pek <terence@terresquall.com>
 @website	www.terresquall.com
-@version	3.0.1
-@dated		03/01/2018
-@notes		- Modified ::compress() so that it can now exclude tags from compression. Excluded <textarea> tags from being compressed.
+@version	3.0.4
+@dated		03/29/2018
+@notes		- Double slashes (//) in Javascript regex blocks no longer get identified as comments.
+			- Added support for minifying JS / CSS files.
+			- Modified ::compress() so that it can now exclude tags from compression. Excluded <textarea> tags from being compressed.
 			- Make get_tags() handle nested tags.
 			Fixed a bug where any Javascript blocks with CDATA will not have their comments cleaned.
 			Resolved a few bugs with whitespace being left behind if you choose to not compress script tags.
@@ -26,7 +28,7 @@ class HTMLMinifier {
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '3.0.1';
+	const VERSION = '3.0.4';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -59,7 +61,8 @@ class HTMLMinifier {
 		'shift_script_tags_to_bottom' => false, // 'combine_javascript_in_script_tags', 'ignore_async_and_defer_tags'
 		
 		// How do you want to compress the script?
-		'compression_mode' => 'all_whitespace_not_newlines'
+		'compression_mode' => 'all_whitespace_not_newlines',
+		'compression_ignore_tags' => array('textarea','pre','script') // NEW THING, NOT IMPLEMENTED.
 	);
 	
 	private static $Presets = array(
@@ -92,7 +95,7 @@ class HTMLMinifier {
 		if(!array_key_exists($type,self::$Presets)) return null;
 		return array_merge(self::$Defaults,self::$Presets[$type]);
 	}
-	
+		
 	// This is THE function that you call when you use this.
 	// Refer to self::$Defaults for what to fill $options with.
 	public static function process($html,$options = null,$cache_key = '') {
@@ -100,10 +103,7 @@ class HTMLMinifier {
 		// If cache key is provided, try to retrieve from cache first.
 		if($cache_key) {
 			$out = HTMLMinifier::cache($cache_key);
-			if($out !== false) {
-				echo $out;
-				return;
-			}
+			if($out !== false) return $out;
 		}
 		
 		// Let's start processing our stuff here.
@@ -216,6 +216,44 @@ class HTMLMinifier {
 		return $out;
 	}
 	
+	// Used to compress JS or CSS files.
+	// $source - file data in string format.
+	// $filetype - "js" or "css".
+	// $options - the same stuff that you use for HTMLMinifier::process.
+	public static function minify_rsc($source,$filetype,$options = null,$cache_key = '') {
+		
+		// If cache key is provided, try to retrieve from cache first.
+		if($cache_key) {
+			$out = HTMLMinifier::cache($cache_key);
+			if($out !== false) return $out;
+		}
+		
+		// Figure out what our compression options are.
+		if($options !== null && is_array($options)) $options = array_merge(self::$Defaults,$options);
+		else $options = self::$Defaults;
+		
+		// Remove comments if required.
+		switch($filetype) {
+		case 'js': case 'javascript':
+			if($options['clean_js_comments'] || $options['compression_mode'] === 'all_whitespace')
+				$source = self::remove_comments($source,'javascript');
+			break;
+		case 'css':
+			if($options['clean_css_comments'] || $options['compression_mode'] === 'all_whitespace')
+				$source = self::remove_comments($source,'css');
+			break;
+		}
+		
+		// Compress the source.
+		$out = self::compress($source,$options['compression_mode']);
+		
+		// Cache if there is a key.
+		if($cache_key) HTMLMinifier::cache($cache_key,$out);
+		
+		return $out;
+		
+	}
+	
 	// This is the function used for both caching and retrieving cached views. If only the first argument is passed, it
 	// RETRIEVES a cached file. If the second argument is passed, it CACHES a file (unless the argument is false).
 	// $path - Key in the absolute path of the URL.
@@ -227,12 +265,15 @@ class HTMLMinifier {
 			return false;
 		}
 		
+		$ext = pathinfo($path,PATHINFO_EXTENSION);
 		$hash = md5($path);
 		$folderpath = realpath(self::$CacheFolder);
-		$fullpath = $folderpath . DIRECTORY_SEPARATOR . "$hash.html";
+		$fullpath = $folderpath . DIRECTORY_SEPARATOR . $hash;
+		if($ext) $fullpath .= ".$ext";
+		else $fullpath .= '.html';
 		
 		// Check if we can write into the folder.
-		if(!is_writable(self::$CacheFolder)) {
+		if(!is_writable($folderpath)) {
 			trigger_error("HTMLMinifier::cache(): Assigned folder for storing the cached file '" . self::$CacheFolder . "' is not writeable or does not exist.");
 			return false;
 		}
@@ -888,17 +929,19 @@ class HTMLMinifier {
 			'comment_multi' => '/\\*[\\s\\S]*?\\*/'
 		);
 		if($type === 'css') $regex = array_merge(array('css_url_function' => 'url\\([\\s\\S]*?\\)'),$regex);
+		elseif($type === 'javascript' || $type === 'js') $regex = array_merge( array( 'js_regex_string' => '/(?!/|\\*).+?(?<!\\\\)/'),$regex );
 		$full_regex = '@(?:'.implode('|',$regex).')@i';
 		
-		// Nab us all the comments!
+		// Nab us everything in the regex.
 		if(preg_match_all($full_regex,$source,$match) <= 0)
 			return $source;
 		
 		foreach($match[0] as $m) {
-			// Ignoring comment notated inside strings or the CSS URL function.
+			// Ignoring comment notated inside strings, regexes or the CSS URL function.
 			if(preg_match('/^'.$regex['string_single'].'$/',$m)) continue;
 			if(preg_match('/^'.$regex['string_double'].'$/',$m)) continue;
 			if($type === 'css' && preg_match('/^'.$regex['css_url_function'].'$/',$m)) continue;
+			if(!empty($regex['js_regex_string']) && preg_match('@^' . $regex['js_regex_string'] . '$@',$m)) continue;
 			
 			// Ignoring components with CDATA.
 			if($ignoreCdataComments && preg_match('/(?:<!\\[CDATA\\[|\\]\\]>)/',$m)) continue;
@@ -956,4 +999,3 @@ class HTMLMinifier {
 		return $source;
 	}
 }
-HTMLMinifier::$CacheFolder = APPPATH . 'cache/';

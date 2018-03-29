@@ -3,24 +3,37 @@
 This class interfaces with the HTMLMinifier class to minify the HTML source.
 It also interfaces with Wordpress.
 
-LAST_UPDATE: 20 December 2017
+Dated: 12 March 2018
 */
 class HTMLMinifier_Manager {
 	
+	const HTACCESS_MARKER = 'Terresquall\HTMLMinifier'; // Never change this.
 	const PLUGIN_OPTIONS_PREFIX = 'ts_htmlminifier_';
-	const PLUGIN_OPTIONS_VERSION = 2;
+	const PLUGIN_OPTIONS_VERSION = 3;
 	
 	static $Defaults; // Set after class declaration.	
 	static $CurrentOptions; // Current options for HTMLMinifier
 	
 	// These are variables that are outside of the HTMLMinifier class.
 	static $ManagerDefaults = array(
-		'minifier_version' => 'use_latest',
+		// For minifying resources.
+		'minify_css_files' => false,
+		'minify_js_files' => false,
+		'ignore_rsc_minify_regex' => '/jquery/i',
+		
+		// Which ones to minify?
 		'minify_wp_admin' => false,
 		'minify_frontend' => true
 	);
 	
-	// All the usable minifier versions, for documentation purposes.
+	// These are the default variables for caching.
+	static $CachingDefaults = array(
+		'enable_rsc_caching' => false,
+		'expiration_time' => 24
+	);
+	
+	// All the usable minifier versions, for documentation purposes (switching between versions not coded).
+	// Deprecated.
 	static $MinifierVersions = array(
 		'use_latest' => 'inc/src/HTMLMinifier.php',
 		'version2' => 'inc/src/HTMLMinifier-v2.php'
@@ -29,24 +42,115 @@ class HTMLMinifier_Manager {
 	// Called with an action hook in the main plugin file.
 	public static function init() {
 		
-		
 		// Imports the correct HTMLMinifier version.
-		//if(!isset(HTMLMinifier_Manager::$CurrentOptions['manager']['minifier_version']))
-			//HTMLMinifier_Manager::$CurrentOptions['manager']['minifier_version'] = 'use_latest'; 
 		require_once HTML_MINIFIER__PLUGIN_DIR . self::$MinifierVersions['use_latest'];
 		define('HTML_MINIFIER_VERSION', HTMLMinifier::VERSION);
-				
+		
 		// Get defaults from the HTMLMinifier class, then append an additional option to it.
 		self::$Defaults = array(
 			'core' => HTMLMinifier::$Defaults,
 			'manager' => self::$ManagerDefaults,
+			'caching' => self::$CachingDefaults,
 			'version' => self::PLUGIN_OPTIONS_VERSION
 		);
 		
 		HTMLMinifier_Manager::init_wp_options(); // Populates self::$CurrentOptions.
+
+		self::check_for_rsc_query(); // Checks whether this is a resource request.
 		
 		//load_plugin_textdomain('html-minifier', false, 'languages'); // Multi-language support text domain.
 		self::ob_start(); // Start obfuscation.
+		
+	}
+	
+	// Handles CSS and JS file queries, if they are redirected here.
+	private static function check_for_rsc_query() {
+		
+		// Gets the URI.
+		$uri = $_SERVER['REQUEST_URI'];
+		if(!empty($_SERVER['QUERY_STRING']))
+			$uri = preg_replace('@' . preg_quote('?' . $_SERVER['QUERY_STRING']) . '$@','',$uri); // Remove any query strings in the URI.
+
+		// Serve a file if the file extension is CSS or Javascript.
+		$ext = $mime = strtolower(pathinfo($uri,PATHINFO_EXTENSION));
+		if(preg_match('@^(css|js)$@i',$ext)) {
+
+			$filepath = rtrim(ABSPATH,'\\/') . $uri;
+			
+			if(is_readable($filepath)) {
+				
+				if($ext === 'js') $mime = 'javascript'; // This is JS's mime type.
+				
+				$min_css = HTMLMinifier_Manager::$CurrentOptions['manager']['minify_css_files'];
+				$min_js = HTMLMinifier_Manager::$CurrentOptions['manager']['minify_js_files'];
+				$output = file_get_contents($filepath); // 
+				$alreadyMin = !empty(HTMLMinifier_Manager::$CurrentOptions['manager']['ignore_rsc_minify_regex']) && @preg_match(HTMLMinifier_Manager::$CurrentOptions['manager']['ignore_rsc_minify_regex'],pathinfo($filepath,PATHINFO_FILENAME));
+				
+				if(!$alreadyMin) {
+					
+					// If caching is enabled, assign a cache key so that the minified result is cached.
+					$cache_key = '';
+					if(!empty(HTMLMinifier_Manager::$CurrentOptions['caching']['enable_rsc_caching'])) {
+						
+						// Check if cache directory is writable first.
+						HTMLMinifier::$CacheFolder = HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR; // Sets the cache folder.
+						if(wp_is_writable(HTMLMinifier::$CacheFolder)) {						
+							$cache_key = $filepath;
+							if(!empty(HTMLMinifier_Manager['caching']['expiration_time']))
+								HTMLMinifier::$CacheExpiry = is_nan( intval(HTMLMinifier_Manager['caching']['expiration_time']) ) ? 86400 : intval(HTMLMinifier_Manager['caching']['expiration_time']) * 3600;
+						} else {
+							// We display an error notification if we are in WP Admin.
+							// TO BE DONE.
+						}
+					}
+					
+					if($ext === 'js' && $min_js)
+						$output = HTMLMinifier::minify_rsc($output,$ext,HTMLMinifier_Manager::$CurrentOptions['core'],$cache_key);
+					elseif($ext === 'css' && $min_css)
+						$output = HTMLMinifier::minify_rsc($output,$ext,HTMLMinifier_Manager::$CurrentOptions['core'],$cache_key);
+						
+				}
+				
+				// Send response headers & content.
+				http_response_code(200);
+				header("Content-Type: text/$mime;charset=utf-8;");
+				echo $output;
+				
+				exit;
+				
+			} else {
+				trigger_error('Please disable HTMLMinifier on your WordPress installation, as your PHP does not have sufficient permissions to allow HTMLMinifier to work.',E_USER_ERROR);
+				exit;
+			}
+		}
+		
+	}
+	
+	// Adds a snippet to the Wordpress .htaccess so that we can process .css and .js files too.
+	// $add will add the HTMLMinifier .htaccess redirector, if false will remove instead.
+	public static function write_htaccess($add = true) {
+		$htaccess = ABSPATH . '.htaccess';
+		
+		if(wp_is_writable($htaccess)) {
+			$content = file_get_contents($htaccess);
+			$preg_quote = preg_quote(self::HTACCESS_MARKER);
+			$has_htaccess = preg_match('@(\\r|\\n|\\r\\n)*?#BEGIN ' . $preg_quote . '[\\s\\S]*?#END ' . $preg_quote . '(\\r|\\n|\\r\\n)*@',$content,$match,PREG_OFFSET_CAPTURE);
+			
+			// If there is an existing entry in .htaccess, remove it.
+			if($has_htaccess)
+				$content = str_replace($match[0][0],PHP_EOL,$content,$match[0][1]);
+			
+			// If we are adding a new .htaccess entry, then do it.
+			if($add) {
+				$idx = strpos($content,'RewriteBase /',strpos($content,'#BEGIN WordPress')+17) + 13; // Find the point to split the string.
+				$split = array( substr($content,0,$idx),substr($content,$idx) ); // Splits the string.
+				$add = '#BEGIN ' . self::HTACCESS_MARKER . PHP_EOL . file_get_contents(HTML_MINIFIER__PLUGIN_DIR . 'inc/mod.htaccess') . PHP_EOL . '#END ' . self::HTACCESS_MARKER;
+				$content = trim($split[0]) . PHP_EOL . PHP_EOL . $add . PHP_EOL . PHP_EOL . trim($split[1]);
+			}
+			
+			// Save output.
+			file_put_contents($htaccess,$content);
+		}
 	}
 	
 	private static function ob_start() {
@@ -101,7 +205,7 @@ class HTMLMinifier_Manager {
 			return array(
 				'core' => $r,
 				'manager' => self::$CurrentOptions['manager'],
-				'version' => self::PLUGIN_OPTIONS_VERSION
+				'version' => self::$CurrentOptions['version']
 			);
 		}
 		return $r;
@@ -114,12 +218,12 @@ class HTMLMinifier_Manager {
 		if($sanitize_fields) {
 			
 			// If options are not properly set up. Terminate.
-			if(!(isset($options['core']) && isset($options['manager']))) {
-				trigger_error('HTMLMinifier_manager::update_options(): An invalid $options array was passed.');
+			if(!( isset($options['core']) && isset($options['manager']) && isset($options['caching']) )) {
+				trigger_error('HTMLMinifier_manager::update_options(): An invalid $options array was passed.');die;
 				return false;
 			}
 			
-			// Loops through the core array to see if it is all right.
+			// Loops through the CORE array to see if it is all right.
 			foreach($options['core'] as $k => $v) {
 				
 				// Remove entries that are not used by HTMLMinifier (e.g. "submit" value, nonces, user-hacked entries).
@@ -144,7 +248,7 @@ class HTMLMinifier_Manager {
 				}
 			}
 			
-			// Loops through the manager array to see if it is all right.
+			// Loops through the MANAGER array to see if it is all right.
 			foreach($options['manager'] as $k => $v) {
 				
 				// Remove entries that are not used by HTMLMinifier (e.g. "submit" value, nonces, user-hacked entries).
@@ -160,15 +264,44 @@ class HTMLMinifier_Manager {
 					if(gettype($options['manager'][$k]) !== 'array')
 						$options['manager'][$k] = $options['manager'][$k] ? 1 : 0;
 					break;
-					
-				case 'minifier_version':
-					if(!array_key_exists($v,self::$MinifierVersions))
-						$options['manager'][$k] = self::$ManagerDefaults[$k];
+				case 'ignore_rsc_minify_regex':
+					break;
+				}
+				
+				// Add / remove a snippet to the HTACCESS when we want to minify JS or CSS files.
+				if($options['manager']['minify_css_files'] || $options['manager']['minify_js_files']) self::write_htaccess(true);
+				else self::write_htaccess(false);
+			}
+			
+			// Loops through the CACHING array to see if it is all right.
+			foreach($options['caching'] as $k => $v) {
+				
+				// Remove entries that are not used by HTMLMinifier (e.g. "submit" value, nonces, user-hacked entries).
+				if(!array_key_exists($k,HTMLMinifier_Manager::$Defaults['caching'])) {
+					unset($options['caching'][$k]);
+					continue;
+				}
+				
+				// Sanitizes for variables depending on how they are used.
+				switch($k) {
+				default:
+					// Force non-array objects into 0s or 1s.
+					if(gettype($options['caching'][$k]) !== 'array')
+						$options['caching'][$k] = $options['caching'][$k] ? 1 : 0;
+					break;
+				case 'expiration_time':
+					$options['caching'][$k] = intval($options['caching'][$k]);
+					break;
 				}
 			}
 			
 			// Recreates the array so that only the 3 main categories remain.
-			$options = array('core' => $options['core'], 'manager' => $options['manager'], 'version' => self::PLUGIN_OPTIONS_VERSION);
+			$options = array(
+				'core' => $options['core'],
+				'manager' => $options['manager'],
+				'caching' => $options['caching'],
+				'version' => $options['version']
+			);
 			
 		}
 		
@@ -178,7 +311,23 @@ class HTMLMinifier_Manager {
 	}
 	
 	// Remove the entry for this plugin if it is uninstalled.
-	public static function uninstall_wp_options() { delete_option(self::PLUGIN_OPTIONS_PREFIX . 'options'); }
+	public static function uninstall() { 
+		delete_option(self::PLUGIN_OPTIONS_PREFIX . 'options');
+		self::write_htaccess(false);
+	}
+	
+	// Activation hook.
+	public static function activate() { 
+		self::init_wp_options();
+		$options = HTMLMinifier_Manager::$CurrentOptions['manager'];
+		
+		// Add / remove a snippet to the HTACCESS when we want to minify JS or CSS files.
+		if($options['minify_css_files'] || $options['minify_js_files']) self::write_htaccess(true);
+		else self::write_htaccess(false);
+	}
+	
+	// Deactivation hook.
+	public static function deactivate() { self::write_htaccess(false); }
 
 }
 ?>

@@ -39,6 +39,7 @@ class HTMLMinifier_Admin {
 			case 'POST': // create
 				if(!is_user_logged_in()) exit; // Cannot save if you are not logged into wp_admin.
 				$data = json_decode(file_get_contents("php://input"),true);
+				
 				//file_put_contents(__DIR__.'/'.$_SERVER['REQUEST_METHOD'].'.txt',json_encode($data,JSON_PRETTY_PRINT));
 				self::save_options($data,$match[1]);
 				exit;
@@ -72,11 +73,23 @@ class HTMLMinifier_Admin {
 		} elseif(isset($post['fully_optimised'])) {
 			if(HTMLMinifier_Manager::update_options(HTMLMinifier_Manager::get_presets('fully_optimised'))) return -1;
 			else return 0;
-		} elseif(isset($post['restore_defaults_manager'])) {
+		} elseif(isset($post['restore_defaults_manager'])) { // Restore defaults for manager settings.
 			$options = HTMLMinifier_Manager::$CurrentOptions;
 			$options['manager'] = HTMLMinifier_Manager::$ManagerDefaults;
 			if(HTMLMinifier_Manager::update_options($options)) return -2;
 			else return 0;
+		} elseif(isset($post['restore_defaults_caching'])) { // Restore defaults for caching settings.
+			$options = HTMLMinifier_Manager::$CurrentOptions;
+			$options['caching'] = HTMLMinifier_Manager::$CachingDefaults;
+			if(HTMLMinifier_Manager::update_options($options)) return -2;
+			else return 0;
+		} elseif(isset($post['clear_cache'])) {
+			$glob = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
+			foreach($glob as $file) {
+				if(preg_match('/^index\\.php$/i',basename($file))) continue;
+				unlink($file);
+			}
+			return -3;
 		}
 		
 		// Organise post fields into the appropriate arrays for saving.
@@ -85,6 +98,7 @@ class HTMLMinifier_Admin {
 		
 		// Determine which data array we are writing to.
 		if(isset($post['submit-manager'])) $option_type = 'manager';
+		
 		foreach(HTMLMinifier_Manager::$Defaults[$option_type] as $k => $v) {
 			if(array_key_exists($k,$post))
 				$options[$option_type][$k] = $post[$k];
@@ -121,7 +135,11 @@ class HTMLMinifier_Admin {
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 				break;
 			case -2:
-				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your settings have been reset to the defaults.','html-minifier');
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> Your settings in this page have been reset to their defaults.','html-minifier');
+				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
+				break;
+			case -3:
+				$GLOBALS[$p . 'settings_notice_message'] = __('<strong>HTML Minifier:</strong> The HTML Minifier cache has been cleared.','html-minifier');
 				$GLOBALS[$p . 'settings_notice_class'] = 'updated notice is-dismissible';
 				break;
 			case 0:

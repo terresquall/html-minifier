@@ -9,12 +9,13 @@ class HTMLMinifier_Upgrader {
 	// It will get longer and longer as there are more and more upgrades.
 	static function run($options) {
 		// Stop executing if $options is wrong.
-		if(!is_array($options)) {
+		if(!is_array($options))
 			$options = HTMLMinifier_Manager::$Defaults;
-		}
 		
+		// Do the upgrading.
 		if(!isset($options['version'])) $options = self::to_1($options);
 		if($options['version'] <= 1) $options = self::from_1_to_2($options);
+		if($options['version'] <= 2) $options = self::from_2_to_3($options);
 		
 		return $options;
 	}
@@ -51,9 +52,6 @@ class HTMLMinifier_Upgrader {
 			unset($options['core']['combine_javascript_in_script_tags']);
 		}
 		
-		if(!isset($options['manager']['minifier_version']))
-			$options['manager']['minifier_version'] = 'use_latest';
-		
 		$options['version'] = 2;
 		
 		// Set default values for new attributes.
@@ -70,10 +68,11 @@ class HTMLMinifier_Upgrader {
 		return $options;
 	}
 	
-	// For use with HTMLMinifier version 2 and below.
-	public static function down_to_0($options) {
-		if($options['clean_css_comments']) $options['clean_css_comments'] = true;
-		
+	// Adds the caching sub-option.
+	private static function from_2_to_3($options) {
+		$options['caching'] = HTMLMinifier_Manager::$CachingDefaults;
+		$options['version'] = 3;
+		return $options;
 	}
 	
 }

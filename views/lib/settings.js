@@ -4,6 +4,224 @@
 	// Activate tooltips.
 	$(function() { $(".tooltip").tooltip(); });
 	
+	// ============================
+	// BEGIN CONVENIENT IMPORTS
+	// ============================
+	
+	// Version 1.00.
+	// Dated December 2017
+	var QuickNotification = Backbone.View.extend({
+		
+		tagName: 'table',
+		id: 'QuickNotification',
+		template: _.template('<tr><td><p class="message"></p><a href="javascript:" role="close-btn">&times;</a></td></tr>'),
+		
+		defaultLifetime: 6442, // Open for 5 seconds, then auto-closes.
+		_isOpen: false,
+		
+		events: {
+			'click a[role="close-btn"]': 'close'
+		},
+		
+		render: function() {
+			this.el.innerHTML = this.template();
+			document.body.appendChild(this.el);
+			return this;
+		},
+		
+		initialize: function() {
+			_.bindAll(this,'open','close');
+			this.render();
+			this.$messageContainer = this.$el.find('.message');
+		},
+		
+		open:function(message,lifetime) {
+						
+			// Set lifetime if it is not set.
+			if(typeof lifetime === 'undefined' || lifetime < 0) lifetime = this.defaultLifetime;
+			
+			// If it is open, close it first.
+			if(this._isOpen) {
+				this.close();
+				setTimeout(this.open,300,message,lifetime);
+				return;
+			}
+			
+			// Processes the opening of the dialog.
+			this.$messageContainer.html(message);
+			this.$el.addClass('open');
+			this._openTimeout = setTimeout(this.close,lifetime);
+			this._isOpen = true;
+		},
+		
+		close:function() {
+			this.$el.removeClass('open');
+			this._isOpen = false;
+			clearTimeout(this._openTimeout);
+		}
+	});
+	
+	// For form subclasses to inherit from.
+	// Version 1.11, 26 March 2018
+	var FormView = Backbone.View.extend({
+		'el': 'form',
+		
+		'events': {'submit': 'submit'},
+		
+		'initialize': function(options) {
+			
+			_.bindAll(this,'submit','submitBtnClick');
+			this.options = options; // Save options.
+			if(options.model) this.model = options.model;
+			
+			// Get all the fields of the form that are tied to the model.
+			var $relevantFields = this.$el.find('input, textarea, select, button');
+
+			// Fields that are read into the model.
+			this.$formFields = $relevantFields.filter(':not([readonly],[disabled])').filter('input:not([type="submit"],[type="button"],[type="image"])');
+			
+			// Get all the submit buttons in the form. Does not update.
+			this.$submitBtns = $relevantFields.filter('input, button').not(':not([type="submit"],[type="image"],[type="reset"])');
+			
+		},
+		
+		// This function is for buttons that are not assigned as form submit buttons.
+		// It creates a submit button for the form and clicks on it (so that native form validation is not bypassed).
+		// Note: Should we disable the clicked button for future iterations?
+		'submitBtnClick': function(e) {
+			
+			e.preventDefault();
+			
+			if(!this.hasOwnProperty("__submitBtn__")) {
+				this.__submitBtn__ = document.createElement('input');
+				this.__submitBtn__.type = "submit";
+				this.__submitBtn__.style.display = "none";
+				this.el.appendChild(this.__submitBtn__);
+			}
+			this.__submitBtn__.click();
+			
+			return false;
+			
+		},
+		
+		// Adds some extra actions to Backbone.save() callback functions.
+		'_submitCallback': function(func) {
+			var that = this;
+			return function(model,response) {
+				that.$submitBtns.prop('disabled',false);
+				func.call(that,model,response);
+			}
+		},
+		
+		// Not used. But searches the form again for new submit buttons.
+		'_updateSubmitBtns': function() {
+			this.$submitBtns = this.$el.find('input, button').not(':not([type="submit"],[type="image"],[type="reset"])');
+			return this.$submitBtns;
+		},
+		
+		'submit': function(e) {
+			
+			// Don't run this function if there isn't a model set.
+			e.preventDefault();
+			
+			if(!this.model) {
+				console.error("A form in FormView was submitted without a Model attached!");
+				return false;
+			}
+			
+			this.updateModel(); // Update the model with form values.
+			
+			// Save the model.
+			if(typeof this.options.save.callbacks !== 'object') this.options.save.callbacks = {};
+			this.$submitBtns.prop('disabled',true);
+			this.model.save(this.options.save.attributes, {
+				'success': this._submitCallback(this.options.save.callbacks.success),
+				'error': this._submitCallback(this.options.save.callbacks.error)
+			});
+			
+			return false;
+		},
+		
+		'updateModel': function() {
+			this.$formFields.each(_.bind(function(i,e) {
+				
+				if(e.nodeName === 'INPUT') {
+					
+					// If the input object is a checkbox or radio, only record the value if it is checked.
+					switch(e.type.toLowerCase()) {
+						case "checkbox": case "radio":
+							this.model.set(e.name,e.checked);
+							return;
+						default:
+							if(e.name && e.value) this.model.set(e.name, e.value);
+					}
+					
+				} else if(e.nodeName.match(/^(TEXTAREA|SELECT)$/i)) {
+					
+					if(e.name && e.value) this.model.set(e.name, e.value);
+					
+				}
+				
+			},this));
+			
+		},
+		
+		// Updates all form fields with reference to model data.
+		'updateFields': function() {
+			this.$formFields.each(_.bind(function(i,e) {
+				var val = this.model.get(e.name);
+				if(val) {
+					switch(e.nodeName) {
+					default:
+						e.value = val;
+						break;
+					case "INPUT":
+						if(e.type.match(/^(checkbox|radio)$/i)) e.checked = val ? true : false;
+						else e.value = val;
+					}
+				}
+			},this));
+		},
+		
+		// Only updates fields in the model that are changed.
+		'updateChangedFields': function() {
+			var $target, target;
+			for(var k in this.model.changed) {
+				$target = this.$formFields.filter("#" + k);
+				if($target.length > 0) {
+					target = $target.get(0);
+					switch(target.nodeName) {
+					default:
+						target.value = this.model.changed[k];
+						break;
+					case "INPUT":
+						if(target.type.match(/^(checkbox|radio)$/i)) target.checked = this.model.changed[k] ? true : false;
+						else target.value = this.model.changed[k];
+					}
+				}
+			}
+		}
+	});
+	
+	// ===========================
+	// BEGIN BUSINESS LOGIC CLASSES
+	// ===========================
+	
+	// Save settings for Backbone.save().
+	var SettingsSaveOptions = {
+		'attributes': null,
+		'callbacks': {
+			success: function(model,response) {
+				quickNotification.open("Your settings have been saved.");
+			},
+			error: function(model,response) {
+				var msgStr = "There has been an error and your settings have <b>NOT</b> been saved. Please try again.";
+				if(typeof response.responseText === 'string') msgStr += "<br/><pre>" + response.responseText + "</pre>"; 
+				quickNotification.open(msgStr);
+			}
+		}
+	};
+	
 	// Controls the navigation tab and initializes the other views, storing references to each of them.
 	var SettingsView = Backbone.View.extend({
 		el: '#SettingsView',
@@ -39,6 +257,7 @@
 		// Opens the tab when the button is click on.
 		_tabsOnClick: function(e) {
 			e.preventDefault();
+			window.location.hash = e.currentTarget.hash;
 			this.$navTabs.removeClass("nav-tab-active");
 			$(e.currentTarget).addClass("nav-tab-active");
 			this.$navTabWindows.hide().filter(e.currentTarget.hash).show();
@@ -46,40 +265,49 @@
 		}
 	});
 	
+	// Caching Settings data model.
+	var CachingOptions = Backbone.Model.extend({
+		defaults: HTMLMinifierSettings.defaults.caching,
+		url: HTMLMinifierSettings.restURL + "&rest=caching"
+	});
+	
 	// Controls the Caching Options page.
-	var CachingOptionsView = Backbone.View.extend({
-		el: '#caching',
-		initialize: function() {
-			// For the button in the cache tab.
-			this.$el.find('#cache-back-to-minify').on('click',function(e) {
-				e.preventDefault();
-				settingsView.$navTabs.eq(0).trigger('click');
+	var CachingOptionsView = FormView.extend({
+		'el': '#caching',
+		
+		'initialize': function(options) {
+			
+			// Initialize the FormView object.
+			CachingOptionsView.__super__.initialize.call(this, {
+				'model': new CachingOptions(),
+				'save': SettingsSaveOptions
 			});
+			
+			this.model.fetch({
+				'success': _.bind(function() {
+					this.updateChangedFields();
+				},this)
+			});
+		},
+		
+		'submit': function(e) {
+			
+			var submitBtn = document.activeElement;
+			switch(submitBtn.name) {
+			case 'restore_defaults_caching': case 'clear_cache':
+				return true;
+			case 'submit-caching':
+				return AdvancedSettingsView.__super__.submit.call(this, e);
+			}
+			
+			return false;
 		}
+		
 	});
 	
 	// Minify Settings data model.
 	var PrimarySettings = Backbone.Model.extend({
-		defaults: {
-			'clean_html_comments': true,
-			'merge_multiple_head_tags': true,
-			'merge_multiple_body_tags': true,
-			'show_signature': true,
-			
-			// Stylesheet optimisations.
-			'clean_css_comments': { 'remove_comments_with_cdata_tags_css': true },
-			'shift_link_tags_to_head': { 'ignore_link_schema_tags': true },
-			'shift_meta_tags_to_head': { 'ignore_meta_schema_tags': true },
-			'shift_style_tags_to_head': { 'combine_style_tags': false },
-			
-			// Javascript optimisations.
-			'clean_js_comments': { 'remove_comments_with_cdata_tags_js': false },
-			'compression_ignore_script_tags': true,
-			'shift_script_tags_to_bottom': false,
-			
-			// How do you want to compress the script?
-			'compression_mode': 'all_whitespace_not_newlines'
-		},
+		defaults: HTMLMinifierSettings.defaults.core,
 		url: HTMLMinifierSettings.restURL + "&rest=core"
 	});
 	
@@ -132,17 +360,15 @@
 				
 				submitBtn.disabled = true;
 				quickNotification.close();
-				this.model.save(null,{
-					success: function(model,response) {
+				this.model.save(SettingsSaveOptions.attributes,{
+					'success': function(model,response) {
 						submitBtn.disabled = false;
-						quickNotification.open("Your settings have been saved.");
+						SettingsSaveOptions.callbacks.success(model,response);
 					},
-					error: function(model,response) {
-						var msgStr = "There has been an error and your settings have <b>NOT</b> been saved. Please try again.";
+					'error': function(model,response) {
 						submitBtn.disabled = false;
-						if(typeof response.responseText === 'string') msgStr += "<br/>" + response.responseText; 
-						quickNotification.open(msgStr);
-					}
+						SettingsSaveOptions.callbacks.error(model,response);
+					},
 				});
 				return false;
 			}
@@ -165,6 +391,7 @@
 				break;
 				
 			case 'SELECT':
+
 				this.updateModel(field.name,field.value);
 				
 				// Force clean CSS and JS comments to be checked if we are choosing 'all_whitespace'.
@@ -179,6 +406,7 @@
 				}
 				break;
 			}
+			
 		},
 		
 		// Listens to changes in the model and updates them accordingly.
@@ -234,7 +462,7 @@
 			
 			// Set the value in the object.
 			var obj = this.model.get(subkey);
-			if(typeof obj !== 'object') obj = {}
+			if(typeof obj !== 'object') obj = {};
 			obj[key] = value;
 			
 			// Recommit this object into the model.
@@ -278,135 +506,42 @@
 	});
 	
 	var AdvancedSettings = Backbone.Model.extend({
-		defaults: {
-			'minifier_version': 'use_latest',
-			'minify_wp_admin': false,
-			'minify_frontend': true
-		},
+		defaults: HTMLMinifierSettings.defaults.manager,
 		url: HTMLMinifierSettings.restURL + "&rest=manager"
-	})
+	});
 	
-	var AdvancedSettingsView = Backbone.View.extend({
-		el:'#advanced-settings',
+	var AdvancedSettingsView = FormView.extend({
+		'el':'#advanced-settings',
 		
-		events: {
-			'change input': 'onChange',
-			'submit': 'onSubmit'  
+		'initialize': function() {			
+			
+			// Initialize the FormView object.
+			AdvancedSettingsView.__super__.initialize.call(this, {
+				'model': new AdvancedSettings(),
+				'save': SettingsSaveOptions
+			});
+			
+			// Update model with form data and make sure the front end display is the same as the model data.
+			this.model.fetch({
+				'success': _.bind(function() {
+					this.updateChangedFields();
+				},this)
+			});
 		},
 		
-		initialize: function() {			
+		'submit': function(e) {
 			
-			this.formInputs = {}; // Contains an ID value map to all form DOM objects.
-			
-			// Set the model for this View.
-			this.model = new AdvancedSettings();
-			
-			// Make sure all updates to the model updates the web UI.
-			this.listenTo(this.model,'change',this.listenToModel);
-			this.model.fetch();
-		},
-		
-		onSubmit: function(e) {
-						
 			var submitBtn = document.activeElement;
 			switch(submitBtn.name) {
 			case 'restore_defaults_manager':
 				return true;
-				
-			case 'submit-manager':				
-				e.preventDefault();
-				
-				submitBtn.disabled = true;
-				quickNotification.close();
-				this.model.save(null,{
-					success: function(model,response) {
-						submitBtn.disabled = false;
-						quickNotification.open("Your settings have been saved.");
-					},
-					error: function(model,response) {
-						var msgStr = "There has been an error and your settings have <b>NOT</b> been saved. Please try again.";
-						submitBtn.disabled = false;
-						if(typeof response.responseText === 'string') msgStr += "<br/><pre>" + response.responseText + "</pre>"; 
-						quickNotification.open(msgStr);
-					}
-				});
-				return false;
+			case 'submit-manager':
+				return AdvancedSettingsView.__super__.submit.call(this, e);
 			}
+			
 			return false;
-		},
-		
-		onChange: function(e) {
-			var field = e.currentTarget;
-			
-			switch(field.nodeName) {	
-			case 'INPUT':
-				if(field.type.toLowerCase() === 'checkbox') {
-					if(field.required && !field.checked) field.checked = true;
-					this.updateModel(field.name,field.checked);
-				} else if(field.type.toLowerCase() === 'radio') {
-					if(field.checked) this.updateModel(field.name,field.value);
-				}
-				break;
-			}
-		},
-		
-		// Listens to changes in the model and updates them accordingly.
-		listenToModel: function(model) {
-			for(var k in model.changed) {
-				this.updateFormField(k,model.changed[k]);
-			}
-		},
-		
-		// Finds the associated key in the model and updates it.
-		updateModel: function(key, value, isSilent) {
-			
-			var changes = {};
-			
-			if(typeof silent === 'undefined') isSilent = true;
-			
-			changes[key] = value;
-			this.model.set(changes,{silent:isSilent});
-			
-			return true;
-		},
-		
-		// Updates the associated form field.
-		// ** Doesn't work for radio fields.
-		updateFormField: function(key, value) {
-			// Get a reference to the DOM object.
-			var dom;
-			if(this.formInputs.hasOwnProperty(key)) {
-				dom = this.formInputs[key];
-			} else {
-				// Stores a reference to the found object so we don't have to search for it again.
-				dom = document.getElementById(key);
-				if(dom) 
-					this.formInputs[key] = dom;
-				else {
-					dom = [];
-					var list = document.querySelectorAll('[name="'+key+'"]');
-					for(var v of list.values()) dom.push(v);
-					this.formInputs[key] = dom;
-				}
-			}
-			
-			if(!dom) {
-				console.warn("There is no form field by the ID of <"+key+"> in the DOM.");
-				return;
-			}
-			
-			// Changes the value of the DOM object to <value>.
-			switch(dom.nodeName) {
-			case 'INPUT':
-				if(dom.type === "checkbox")
-					dom.checked = value ? true : false;
-				else if(dom.constructor === Array) {
-					for(var i=0;i<dom.length;i++)
-						if(dom[i].value === value) dom.checked = true;
-				}
-				break;
-			}
 		}
+		
 	});
 	
 	var FeedbackView = Backbone.View.extend({
@@ -422,57 +557,6 @@
 				success: function(response) { quickNotification.open(response); },
 				error: function(jqXHR, textStatus, errorThrown) { quickNotification.open(response); }
 			});
-		}
-	});
-	
-	var QuickNotification = Backbone.View.extend({
-		
-		tagName: 'table',
-		id: 'QuickNotification',
-		template: _.template('<tr><td><p class="message"></p><a href="javascript:" role="close-btn">&times;</a></td></tr>'),
-		
-		defaultLifetime: 6442, // Open for 5 seconds, then auto-closes.
-		_isOpen: false,
-		
-		events: {
-			'click a[role="close-btn"]': 'close'
-		},
-		
-		render: function() {
-			this.el.innerHTML = this.template();
-			document.body.appendChild(this.el);
-			return this;
-		},
-		
-		initialize: function() {
-			_.bindAll(this,'open','close');
-			this.render();
-			this.$messageContainer = this.$el.find('.message');
-		},
-		
-		open:function(message,lifetime) {
-						
-			// Set lifetime if it is not set.
-			if(typeof lifetime === 'undefined' || lifetime < 0) lifetime = this.defaultLifetime;
-			
-			// If it is open, close it first.
-			if(this._isOpen) {
-				this.close();
-				setTimeout(this.open,300,message,lifetime);
-				return;
-			}
-			
-			// Processes the opening of the dialog.
-			this.$messageContainer.html(message);
-			this.$el.addClass('open');
-			this._openTimeout = setTimeout(this.close,lifetime);
-			this._isOpen = true;
-		},
-		
-		close:function() {
-			this.$el.removeClass('open');
-			this._isOpen = false;
-			clearTimeout(this._openTimeout);
 		}
 	});
 	

@@ -1,17 +1,17 @@
 === HTML Minifier ===
 
 Contributors: terresquall
-Tags: source minifier, minify, html, javascript, css, html optimiser
-Requires at least: 3.5
-Tested up to: 4.9.1
-Stable tag: 2.0.1
+Tags: source minifier, minify, html, javascript, css, html optimiser, caching
+Requires at least: 3.6.4
+Tested up to: 4.9.4
+Stable tag: 2.1.0
 License: GPLv2 or later
 
-A server-side source code minifier for Wordpress, HTML Minifier is designed to minimise and optimise HTML output.
+A server-side source code minifier for WordPress, HTML Minifier is designed to minimise, optimise and cache HTML, Javascript and CSS output on your site.
 
 == Description ==
 
-HTML Minifier is a server-side source code minifier that is available both as a PHP class and as a Wordpress plugin. It is designed to optimise HTML output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.
+HTML Minifier is a server-side source code minifier and cacher that is available both as a PHP class and as a WordPress plugin. It is designed to optimise HTML, CSS and Javascript output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.
 
 A variety of optimisation options and minification styles are available in the plugin, and they can be selected from or toggled depending on the user's needs. To see the full list of options or to download the PHP version, [click here](http://www.terresquall.com/web/html-minifier/).
 
@@ -23,6 +23,13 @@ Unzip the downloaded file into the plugin folder in your blog and activate it in
 
 == Changelog ==
 
+= 2.1.0 =
+*Release Date - 29 March 2018*
+
+* HTML Minifier now minifies CSS and JS files on your WordPress site too. You can find these settings under the Advanced Settings tab.
+* The CSS and JS files minified by HTML Minifier can also be cached, so that they will be served faster.
+* Bug-fix: Fixed an issue with the Javascript comments remover in the HTMLMinifier.php source. It no longer removes comment blocks inside regex expressions.
+
 = 2.0.1 =
 *Release Date - 4 January 2018*
 
@@ -33,7 +40,7 @@ Unzip the downloaded file into the plugin folder in your blog and activate it in
 
 * Completely recoded the source PHP class HTMLMinifier. Now, it isn't dependent on PHP's DOMDocument class, which caused some strange behaviours (like changing double quotes to single quotes, or encoding some UTF-8 characters wrongly.
 * Added a lot of new control options for minifying your HTML, and made the Settings page more seamless (it works on Backbone now!).
-* Features to expect in the future: 1) more selective HTML shifting options, such as excluding certain <script> tags (like HTML5 Shiv) when moving them to the bottom, 2) 'ligtening' Wordpress by removing certain tags and includes that are generally not very useful.
+* Features to expect in the future: 1) more selective HTML shifting options, such as excluding certain <script> tags (like HTML5 Shiv) when moving them to the bottom, 2) 'ligtening' WordPress by removing certain tags and includes that are generally not very useful.
 * As usual, please help to report if there are any bugs you find. The source has been completely recoded, so there are bound to be bugs.
 
 = 1.1.1 =
