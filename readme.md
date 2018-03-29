@@ -23,6 +23,11 @@ Unzip the downloaded file into the plugin folder in your blog and activate it in
 
 == Changelog ==
 
+= 2.1.1 =
+*Release Date - 29 March 2018*
+
+* Bug-fix: Fixed a severe error with caching that caused the plugin to break on some servers.
+
 = 2.1.0 =
 *Release Date - 29 March 2018*
 

@@ -96,8 +96,8 @@ class HTMLMinifier_Manager {
 						HTMLMinifier::$CacheFolder = HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR; // Sets the cache folder.
 						if(wp_is_writable(HTMLMinifier::$CacheFolder)) {						
 							$cache_key = $filepath;
-							if(!empty(HTMLMinifier_Manager['caching']['expiration_time']))
-								HTMLMinifier::$CacheExpiry = is_nan( intval(HTMLMinifier_Manager['caching']['expiration_time']) ) ? 86400 : intval(HTMLMinifier_Manager['caching']['expiration_time']) * 3600;
+							if(!empty(HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time']))
+								HTMLMinifier::$CacheExpiry = is_nan( intval(HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time']) ) ? 86400 : intval(HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time']) * 3600;
 						} else {
 							// We display an error notification if we are in WP Admin.
 							// TO BE DONE.

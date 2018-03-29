@@ -6,7 +6,7 @@
 Plugin Name: HTML Minifier
 Plugin URI: http://www.terresquall.com/web/html-minifier/
 Description: Minifies and caches the HTML output of your Wordpress site, along with accompanying CSS and Javascript files. There are no embedded ads, no feature that is pay-to-use, no tricky money-making mechanisms. Just a source-minifying tool that is as simple and useful as possible.
-Version: 2.1.0
+Version: 2.1.1
 Dated: 29/03/2018
 Author: Terresquall
 Author URI: http://www.terresquall.com/
@@ -28,7 +28,7 @@ define('HTML_MINIFIER__MINIMUM_WP_VERSION', '3.6.4'); // Probably not used at th
 // Bear essentials
 require_once HTML_MINIFIER__PLUGIN_DIR . 'inc/HTMLMinifier.manager.php';
 
-define('HTML_MINIFIER_PLUGIN_VERSION', '2.1.0');
+define('HTML_MINIFIER_PLUGIN_VERSION', '2.1.1');
 define('HTML_MINIFIER_PLUGIN_VERSION_DATE', '29 March 2018');
 
 add_action('init',array('HTMLMinifier_Manager','init'));
