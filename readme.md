@@ -4,7 +4,7 @@ Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, html optimiser, caching
 Requires at least: 3.6.4
 Tested up to: 4.9.4
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 
 A server-side source code minifier for WordPress, HTML Minifier is designed to minimise, optimise and cache HTML, Javascript and CSS output on your site.
