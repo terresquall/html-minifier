@@ -3,7 +3,7 @@
 Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, html optimiser, caching
 Requires at least: 3.6.4
-Tested up to: 4.9.4
+Tested up to: 4.9.5
 Stable tag: 2.1.2
 License: GPLv2 or later
 
