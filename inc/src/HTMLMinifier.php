@@ -8,9 +8,10 @@ is fine.
 
 @author		Terence Pek <terence@terresquall.com>
 @website	www.terresquall.com
-@version	3.0.4
-@dated		03/29/2018
-@notes		- Double slashes (//) in Javascript regex blocks no longer get identified as comments.
+@version	3.0.8
+@dated		30/04/2018
+@notes		- Added support for 'compression_ignored_tags' and deprecated 'compression_ignore_script_tags'.
+			- Double slashes (//) in Javascript regex blocks no longer get identified as comments.
 			- Added support for minifying JS / CSS files.
 			- Modified ::compress() so that it can now exclude tags from compression. Excluded <textarea> tags from being compressed.
 			- Make get_tags() handle nested tags.
@@ -20,15 +21,13 @@ is fine.
 			- Made $CacheFolder more lenient with directory separators.
 			- Force comment cleaning for 'all_whitespace' compression mode. 
 			- Fixed a bug with script tags inside conditional comments.
-			- Added a caching function for v2.0.1.
-			- Removed pretty indents option (since it is not done yet).
 */
 class HTMLMinifier {
 	
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '3.0.4';
+	const VERSION = '3.0.8';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -57,12 +56,12 @@ class HTMLMinifier {
 		
 		// Javascript optimisations.
 		'clean_js_comments' => array('remove_comments_with_cdata_tags_js' => false),
-		'compression_ignore_script_tags' => true,
+		//'compression_ignore_script_tags' => true, //LEGACY ATTRIBUTE
 		'shift_script_tags_to_bottom' => false, // 'combine_javascript_in_script_tags', 'ignore_async_and_defer_tags'
 		
 		// How do you want to compress the script?
 		'compression_mode' => 'all_whitespace_not_newlines',
-		'compression_ignore_tags' => array('textarea','pre','script') // NEW THING, NOT IMPLEMENTED.
+		'compression_ignored_tags' => array('textarea','pre','script') // NEW THING, NOT IMPLEMENTED.
 	);
 	
 	private static $Presets = array(
@@ -81,7 +80,8 @@ class HTMLMinifier {
 		'fully_optimised' => array(
 			'shift_style_tags_to_head' => array('combine_style_tags' => true),
 			'shift_script_tags_to_bottom' => array('combine_javascript_in_script_tags' => true, 'ignore_async_and_defer_tags' => true),
-			'compression_ignore_script_tags' => false,
+			//'compression_ignore_script_tags' => false, //LEGACY ATTRIBUTE
+			'compression_ignored_tags' => array('textarea','pre'),
 			'compression_mode' => 'all_whitespace'
 		)
 	);
@@ -179,17 +179,17 @@ class HTMLMinifier {
 		
 		$out = self::process_script_options($out,$options,$comments,$conditionals,$wrapped_conditionals);
 		
-		// Handling compression here.
-		if($options['compression_ignore_script_tags']) {
-			$out = self::compress($out,$options['compression_mode'],array('textarea','script'));
-		} else $out = self::compress($out,$options['compression_mode'],array('textarea'));
+		// We are still checking for 'compression_ignore_script_tags' for backward compatibility.
+		if( !empty($options['compression_ignore_script_tags']) && !in_array('script',$options['compression_ignored_tags']) )
+			$options['compression_ignored_tags'][] = 'script';
+		$out = self::compress($out,$options['compression_mode'],$options['compression_ignored_tags']);
 				
 		// Replace all the comments that are saved.
 		if(preg_match_all('@<!-- \\[htmlminifier\\[([0-9a-z]*)\\]\\] -->@i',$out,$tagged_comments)) {
 			foreach($tagged_comments[0] as $k => $tc) {
 				if(array_key_exists($tagged_comments[1][$k],$comments)) {
 					$new_comment = $comments[$tagged_comments[1][$k]];
-					if(substr($tagged_comments[1][$k],-1) === 'c') $new_comment = self::compress($new_comment,$options['compression_mode'],array('textarea'));
+					if(substr($tagged_comments[1][$k],-1) === 'c') $new_comment = self::compress($new_comment,$options['compression_mode'],$options['compression_ignored_tags']);
 					$out = self::replace($tc,'<!--'.$new_comment.'-->',$out);
 				} else
 					$out = self::replace($tc,'',$out);
@@ -232,6 +232,8 @@ class HTMLMinifier {
 		if($options !== null && is_array($options)) $options = array_merge(self::$Defaults,$options);
 		else $options = self::$Defaults;
 		
+		$orig_size = strlen($source); // Saves the original size of the source.
+		
 		// Remove comments if required.
 		switch($filetype) {
 		case 'js': case 'javascript':
@@ -244,11 +246,17 @@ class HTMLMinifier {
 			break;
 		}
 		
-		// Compress the source.
-		$out = self::compress($source,$options['compression_mode']);
+		$out = trim(self::compress($source,$options['compression_mode'])); // Compress the source.
+		$new_size = strlen($out); // Saves the new size.
 		
-		// Cache if there is a key.
-		if($cache_key) HTMLMinifier::cache($cache_key,$out);
+		// Format the signature.
+		if($options['show_signature']) {
+			$sig = sprintf(self::SIGNATURE,$orig_size,$new_size);
+			if($cache_key) $sig .= PHP_EOL . sprintf(self::CACHE_SIG,date('d M Y'));
+			$out = '/* ' . PHP_EOL . $sig . PHP_EOL . '*/' . PHP_EOL . $out; // Add the signature.
+		}
+		
+		if($cache_key) HTMLMinifier::cache($cache_key,$out); // Cache if there is a key.
 		
 		return $out;
 		
@@ -579,7 +587,7 @@ class HTMLMinifier {
 	private static function process_script_options($source,$options,&$comments,&$conditionals,&$wrapped_conditionals) {
 				
 		// If none of the options are turned on, then let's move on.
-		if(!($options['clean_js_comments'] || $options['compression_ignore_script_tags'] || $options['shift_script_tags_to_bottom']))
+		if(!($options['clean_js_comments'] || $options['shift_script_tags_to_bottom']))
 			return $source;
 		
 		// Parse some nested options preemptively.
@@ -622,9 +630,7 @@ class HTMLMinifier {
 							$in_script[3][$id] .= PHP_EOL; // Adds a line break for aesthetic purposes at the end of closing tag.
 							
 							// Clean comments in Javascript if we need to.
-							if($options['compression_ignore_script_tags']) {
-								$new_str = self::compress($in_script[1][$id],$options['compression_mode']) . $in_script[2][$id] . self::compress($in_script[3][$id],$options['compression_mode']);
-							} else $new_str = self::compress($in_script[1][$id] . $in_script[2][$id] . $in_script[3][$id],$options['compression_mode']);
+							$new_str = self::compress($in_script[1][$id] . $in_script[2][$id] . $in_script[3][$id],$options['compression_mode'],$options['compression_ignored_tags']);
 							
 							// If we are moving this tag, remove it from its original position.
 							if( $options['shift_script_tags_to_bottom'] && !($dont_ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer']))) ) {

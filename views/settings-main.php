@@ -3,7 +3,8 @@ if (!function_exists( 'add_action' )) {
 	echo 'Hi there!  I\'m just a component of a Wordpress plugin. Not much I can do when called directly.';
 	exit;
 }
-?><div class="wrap" id="SettingsView">
+?><noscript class="notice"><i class="dashicons dashicons-warning"></i> You have disabled Javascript on your browser. Please enable it as this page cannot work without Javascript.</noscript>
+<div class="wrap" id="SettingsView">
 	
     <h1>HTML Minifier &mdash; <?= __('Settings','html-minifier'); ?></h1><?php
 		$p = HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX;
@@ -16,17 +17,16 @@ if (!function_exists( 'add_action' )) {
 		<a href="#feedback-bug-report" class="nav-tab"><?= __('Feedback &amp; Bug Reporting','html-minifier'); ?></a>
 		<a href="#about" class="nav-tab"><?= __('About','html-minifier'); ?></a>
 	</h2>
-	
 	<form method="post" action="#primary-settings" id="primary-settings" class="nav-window">
 		<?php wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
 		<table class="form-table">
             <tbody>
 				<tr>
-                    <th scope="row"><?= __('General Options','html-minifier'); ?></th>
+                    <th scope="row"><?= __('General Options','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("Mouse over each option for more information.",'html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
-                            <legend class="screen-reader-text"><span><?= __('Options','html-minifier'); ?></span></legend>
-							<p><label for="clean_html_comments" class="tooltip" title="<?= __('Removes all HTML comments, except those with conditional tags.','html-minifier'); ?>">
+                            <legend class="screen-reader-text"><span><?= __('General Options','html-minifier'); ?></span></legend>
+							<p><label for="clean_html_comments" class="tooltip" title="<?= __('Removes all HTML comments, except those with conditional tags.','html-minifier'); ?>">								
 								<input type="checkbox" name="clean_html_comments" id="clean_html_comments" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['clean_html_comments']) && HTMLMinifier_Manager::$CurrentOptions['core']['clean_html_comments']) echo ' checked="checked"';
 								?>/> <?= __('Remove HTML comments','html-minifier'); ?>
@@ -39,21 +39,21 @@ if (!function_exists( 'add_action' )) {
 							<p><label for="merge_multiple_head_tags" class="tooltip" title="<?= __('If there are multiple &lt;head&gt; tags in the document, they will be merged.','html-minifier'); ?>">
 								<input type="checkbox" name="merge_multiple_head_tags" id="merge_multiple_head_tags" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['merge_multiple_head_tags']) && HTMLMinifier_Manager::$CurrentOptions['core']['merge_multiple_head_tags']) echo ' checked="checked"';
-								?>/> <?= __('Merge multiple &lt;head&gt; tags','html-minifier'); ?>
+								?>/> <?= __('Merge multiple <code>&lt;head&gt;</code> tags','html-minifier'); ?>
 							</label></p>
 							<p><label for="merge_multiple_body_tags" class="tooltip" title="<?= __('If there are multiple &lt;body&gt; tags in the document, they will be merged.','html-minifier'); ?>">
 								<input type="checkbox" name="merge_multiple_body_tags" id="merge_multiple_body_tags" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['merge_multiple_body_tags']) && HTMLMinifier_Manager::$CurrentOptions['core']['merge_multiple_body_tags']) echo ' checked="checked"';
-								?>/> <?= __('Merge multiple &lt;body&gt; tags','html-minifier'); ?>
+								?>/> <?= __('Merge multiple <code>&lt;body&gt;</code> tags','html-minifier'); ?>
 							</label></p>
                         </fieldset>
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row"><?= __('Stylesheet Optimisation','html-minifier'); ?></th>
+                    <th scope="row"><?= __('Stylesheet Optimisation','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("Mouse over each option for more information.",'html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
-                            <legend class="screen-reader-text"><span><?= __('Options','html-minifier'); ?></span></legend>
+                            <legend class="screen-reader-text"><span><?= __('Stylesheet Optimisation','html-minifier'); ?></span></legend>
                             <p><label for="clean_css_comments" class="tooltip" title="<?= __('Removes all comments in CSS embedded on the page.','html-minifier'); ?>">
 								<input type="checkbox" name="clean_css_comments" id="clean_css_comments" value="1"<?php
 									$clean_css_comments = isset(HTMLMinifier_Manager::$CurrentOptions['core']['clean_css_comments']) && HTMLMinifier_Manager::$CurrentOptions['core']['clean_css_comments'];
@@ -108,10 +108,10 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row"><?= __('Script Optimisation','html-minifier'); ?><br/><small style="font-weight:100;"><?= __("If your code breaks after activating the plugin, try checking only the default options in this section (i.e. remove Javascript comments and don't compress &lt;script&gt; contents).",'html-minifier'); ?></small></th>
+                    <th scope="row"><?= __('Script Optimisation','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("If your code breaks after activating the plugin, try checking only the default options in this section (i.e. remove Javascript comments and don't compress &lt;script&gt; contents).",'html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
-                            <legend class="screen-reader-text"><span><?= __('Options','html-minifier'); ?></span></legend>
+                            <legend class="screen-reader-text"><span><?= __('Script Optimisation','html-minifier'); ?></span></legend>
                             
 							<p><label for="clean_js_comments" class="tooltip" title="<?= __('Removes all comments in Javascript embedded on the page.','html-minifier'); ?>">
 								<input name="clean_js_comments" type="checkbox" id="clean_js_comments" value="1"<?php
@@ -125,11 +125,6 @@ if (!function_exists( 'add_action' )) {
 								<input type="checkbox" name="remove_comments_with_cdata_tags_js" id="remove_comments_with_cdata_tags_js" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['clean_js_comments']['remove_comments_with_cdata_tags_js']) && HTMLMinifier_Manager::$CurrentOptions['core']['clean_js_comments']['remove_comments_with_cdata_tags_js']) echo ' checked="checked"';
 								?>/> <?= __('Remove Javascript comments containing CDATA tags','html-minifier'); ?>
-							</label></p>
-							<p><label for="compression_ignore_script_tags" class="tooltip" title="<?= __("If your Javascript code isn't properly-written, i.e. your lines are not properly truncated with semi-colons, check this to ignore compressing them.",'html-minifier'); ?>">
-								<input name="compression_ignore_script_tags" type="checkbox" id="compression_ignore_script_tags" value="1"<?php 
-									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['compression_ignore_script_tags']) && HTMLMinifier_Manager::$CurrentOptions['core']['compression_ignore_script_tags']) echo ' checked="checked"';
-								?>/> <?= __("Don't compress content in <code>&lt;script&gt;</code> tags.",'html-minifier'); ?>
 							</label></p>
 							<p><label for="shift_script_tags_to_bottom" class="tooltip" title="<?= __('Moves all existing &lt;script&gt; tags in the page to the bottom. Might cause on-page Javascript to break, depending on how your page is scripted.','html-minifier'); ?>">
 								<input name="shift_script_tags_to_bottom" type="checkbox" id="shift_script_tags_to_bottom" value="1"<?php
@@ -158,7 +153,8 @@ if (!function_exists( 'add_action' )) {
                     <th scope="row"><label for="compression_mode"><?= __('Compression Mode','html-minifier'); ?></label></th>
                     <td>
                         <fieldset>
-                            <select name="compression_mode" id="compression_mode">
+							<legend class="screen-reader-text"><span><?= __('Compression Mode','html-minifier'); ?></span></legend>
+							<select name="compression_mode" id="compression_mode">
 								<?php
 								if(class_exists('HTMLMinifier')) 
 									foreach(HTMLMinifier::$CompressionMode as $k => $v)
@@ -169,10 +165,29 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
+                    <th scope="row"><?= __('Compression Ignored Tags','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("Specify the tags which have content that shouldn't be compressed.",'html-minifier'); ?></small></th>
+                    <td>
+                        <fieldset id="compression_ignored_tags">
+							<legend class="screen-reader-text"><span><?= __('Compression Ignored Tags','html-minifier'); ?></span></legend>
+							<noscript>Please enable Javascript, or this section will not work.</noscript>
+							<div>
+								<script type="text/template"><fieldset class="ignored-tag">
+									<input type="text" placeholder="Fill in tag name" name="compression_ignored_tags[]"/> <a href="javascript:" class="delete-tag"><span class="dashicons dashicons-trash"></span></a>
+								</fieldset></script><?php
+								foreach(HTMLMinifier_Manager::$CurrentOptions['core']['compression_ignored_tags'] as $tag) {
+									?><fieldset class="ignored-tag"><input type="text" placeholder="Fill in tag name" name="compression_ignored_tags[]" value="<?= $tag; ?>"/> <a href="javascript:" class="delete-tag"><span class="dashicons dashicons-trash"></span></a></fieldset><?php
+								} ?>
+							</div>
+							<a href="javascript:" class="add-new-tag">Add a new tag</a>
+                        </fieldset>
+                    </td>
+                </tr>
+				<tr>
                     <th scope="row"><?= __('Quick Presets','html-minifier'); ?><br/>
-						<small style="font-weight:100;"><?= __("Don't know how to setup? Try these presets.",'html-minifier'); ?></small>
+						<small class="cat-tooltip"><?= __("Don't know how to setup? Try these presets.",'html-minifier'); ?></small>
 					</th>
                     <td valign="top">
+						<legend class="screen-reader-text"><span><?= __('Quick Presets','html-minifier'); ?></span></legend>
 						<input type="submit" name="super_safe" id="super_safe" value="<?= __('Super Safe','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Only the absolute safest minification options are selected.','html-minifier'); ?>"/>
 						<input type="submit" name="safe" id="safe" value="<?= __('Safe (Default)','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Default settings that the plugin comes with.','html-minifier'); ?>"/>
 						<input type="submit" name="moderate" id="moderate" value="<?= __('Moderate','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Only the riskiest options are left out.','html-minifier'); ?>"/>
@@ -194,7 +209,7 @@ if (!function_exists( 'add_action' )) {
 		<table class="form-table">
 			<tbody>
 				<tr>
-                    <th scope="row"><?= __('Minify Resource Files','html-minifier'); ?><br/><small style="font-weight:100;"><?= __('Minifies CSS (<em>.css</em>) and Javascript (<em>.js</em>) resource files (themes and plugins usually do not minify their own resource files).','html-minifier'); ?></small></th>
+                    <th scope="row"><?= __('Minify Resource Files','html-minifier'); ?><br/><small class="cat-tooltip"><?= __('Minifies CSS (<em>.css</em>) and Javascript (<em>.js</em>) resource files (themes and plugins usually do not minify their own resource files).','html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify CSS files','html-minifier'); ?></span></legend>
@@ -218,8 +233,22 @@ if (!function_exists( 'add_action' )) {
                 </tr>
 				<tr>
                     <th scope="row">
+						<label for="ignore_rsc_minify_regex"><?= __('Browser Resource Caching','html-minifier'); ?></label><br/>
+						<small class="cat-tooltip"><?= __('If non-zero, tells the client browser to cache minified resource files.','html-minifier'); ?></small>
+					</th>
+                    <td>
+                        <fieldset>
+                            <input type="number" name="browser_rsc_caching" id="browser_rsc_caching" step="1" min="0" max="999" value="<?php 
+								if(isset(HTMLMinifier_Manager::$CurrentOptions['manager']['browser_rsc_caching']) && HTMLMinifier_Manager::$CurrentOptions['manager']['browser_rsc_caching']) echo HTMLMinifier_Manager::$CurrentOptions['manager']['browser_rsc_caching'];
+								else echo '24'
+							?>"/> &nbsp;hours
+                        </fieldset>
+                    </td>
+                </tr>
+				<tr>
+                    <th scope="row">
 						<label for="ignore_rsc_minify_regex"><?= __('Don\'t Minify Resources with&hellip;','html-minifier'); ?></label><br/>
-						<small style="font-weight:100;"><?= __('PHP regex (<em>preg</em>) string that specifies which files to not minify. By default, the regex matches some files in WP-include.','html-minifier'); ?></small>
+						<small class="cat-tooltip"><?= __('PHP regex (<em>preg</em>) string that specifies which files to not minify. By default, the regex matches some files in WP-include.','html-minifier'); ?></small>
 					</th>
                     <td>
                         <fieldset>
@@ -228,7 +257,7 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row"><?= __('Minify Site Components','html-minifier'); ?><br/><small style="font-weight:100;"><?= __("Avoid changing the settings in this section unless you know what you're doing.",'html-minifier'); ?></small></th>
+                    <th scope="row"><?= __('Minify Site Components','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("Avoid changing the settings in this section unless you know what you're doing.",'html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify WP-Admin source','html-minifier'); ?></span></legend>
@@ -261,44 +290,41 @@ if (!function_exists( 'add_action' )) {
 	
 	<form method="post" action="#caching" id="caching" class="nav-window">
 		<?php wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
+		<p class="notice"><i class="dashicons dashicons-admin-generic"></i> If you use the caching features on HTML Minifier, it may cause other WordPress caching plugins to work incorrectly.</p>
 		<table class="form-table">
             <tbody>
 				<tr>
-                    <td class="updated notice" colspan="2">
-                        <p>If you use the caching features on HTML Minifier, it may cause other WordPress caching plugins to work incorrectly.</p>
-                    </td>
-                </tr>
-				<tr>
-                    <th scope="row"><?= __('Site Caching','html-minifier'); ?><br/><small style="font-weight:100;"><?= __('Caches files minified by this plugin.','html-minifier'); ?></small></th>
+                    <th scope="row"><?= __('Server-side Caching','html-minifier'); ?><br/><small class="cat-tooltip"><?= __('Caches files minified by this plugin.','html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
-                            <legend class="screen-reader-text"><span><?= __('Enable Resource Caching','html-minifier'); ?></span></legend>
+                            <legend class="screen-reader-text"><span><?= __('Enable Server-side Resource Caching','html-minifier'); ?></span></legend>
                             <p><label for="enable_rsc_caching" class="tooltip" title="<?= __('Caches resource files (.css or .js) that are minified by HTML Minifier.','html-minifier'); ?>">
 								<input type="checkbox" name="enable_rsc_caching" id="enable_rsc_caching" value="1"<?php 
 									if(!empty(HTMLMinifier_Manager::$CurrentOptions['caching']['enable_rsc_caching'])) echo ' checked="checked"';
-								?>/> <?= __('Enable Resource Caching','html-minifier'); ?>
+								?>/> <?= __('Enable Server-side Resource Caching','html-minifier'); ?>
 							</label></p>
                         </fieldset>
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row">Expiration Time<br/><small style="font-weight:100;"><?= __('How long should cached files be stored?','html-minifier'); ?></small></th>
+                    <th scope="row">Expiration Time<br/><small class="cat-tooltip"><?= __('How long should cached files be stored?','html-minifier'); ?></small></th>
                     <td>
                         <fieldset class="tooltip" title="How long should cached files be stored?">
                             <legend class="screen-reader-text"><span><?= __('Expiration Time','html-minifier'); ?><span></legend>
                             <input type="number" name="expiration_time" id="expiration_time" step="1" min="0" max="999" value="<?php 
 								if(isset(HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time']) && HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time']) echo HTMLMinifier_Manager::$CurrentOptions['caching']['expiration_time'];
 								else echo '24'
-							?>" style="width:60px;"/> &nbsp;hours
+							?>"/> &nbsp;hours
                         </fieldset>
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row">Clear Cache<br/><small style="font-weight:100;"><?= __('Removes all files cached by this plugin.','html-minifier'); ?></small></th>
+                    <th scope="row">Refresh Cache<br/><small class="cat-tooltip"><?= __('Refreshes the caching system by removing all old cached files.','html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
-                            <legend class="screen-reader-text"><span><?= __('Clear Cache','html-minifier'); ?></span></legend>
+                            <legend class="screen-reader-text"><span><?= __('Refresh Cache','html-minifier'); ?></span></legend>
                             <input type="submit" name="clear_cache" id="clear_cache" value="Remove Cached Items" class="button-secondary"/>
+							<p><small><strong>Size of cache:</strong> <?= round($size/1000,2); ?> kilobytes</small></p>
                         </fieldset>
                     </td>
                 </tr>

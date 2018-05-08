@@ -197,6 +197,12 @@ class HTMLMinifier_Admin {
 	}
 	
 	public static function display_settings() {
+		$cache = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
+		$size = 0;
+		foreach($cache as $file) {
+			if(basename($file) === 'index.php') continue;
+			$size += strlen(file_get_contents($file));
+		}
 		$file = HTML_MINIFIER__PLUGIN_DIR.'views/settings-main.php';
 		include $file;
 	}

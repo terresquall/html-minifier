@@ -4,7 +4,7 @@ Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, html optimiser, caching
 Requires at least: 3.6.4
 Tested up to: 4.9.4
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv2 or later
 
 A server-side source code minifier for WordPress, HTML Minifier is designed to minimise, optimise and cache HTML, Javascript and CSS output on your site.
@@ -22,6 +22,17 @@ There is also a [GitHub repository](https://github.com/terresquall/html-minifier
 Unzip the downloaded file into the plugin folder in your blog and activate it in WP-Admin. Alternatively, you can just download it directly from WP-Admin and activate it.
 
 == Changelog ==
+
+= 2.1.2 =
+*Release Date - 8 May 2018*
+
+* Made the database upgrader work more efficiently. Previously, it ran every time a new page loaded. Now, it only works when you activate or upgrade the plugin.
+* Added a new option to "Browser Resource Caching", which tells the client-side browser to cache minified CSS or JS files. This can improve loading speed.
+* Added a new option "Compression Ignored Tags", which allows you to set tags whose contents are not compressed. This is for tags like &lt;textarea&gt; and &lt;pre&gt;, wherein whitespace in their contents affect rendering. You can also use it to disable &lt;script&gt; tag compression, in case your inline Javascript is not properly-written.
+* The "Compression Ignore Script Tags" option has been removed, as its functionality has been transferred to "Compression Ignored Tags". If you have checked the option before upgrading, it will automatically be reflected in your settings under "Compression Ignored Tags".
+* If 'Show Signatures' is enabled, HTML Minifier now leaves a signature in minified resources files (i.e. .js and .css) too.
+* Improved the design of the static tooltips in the Settings page.
+* Made the Settings UI work better with browsers that have Javascript disabled - it now shows a message to prompt the user to enable their Javascript.
 
 = 2.1.1 =
 *Release Date - 29 March 2018*

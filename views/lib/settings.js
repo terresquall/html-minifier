@@ -62,7 +62,7 @@
 	});
 	
 	// For form subclasses to inherit from.
-	// Version 1.11, 26 March 2018
+	// Version 1.22, 7 May 2018
 	var FormView = Backbone.View.extend({
 		'el': 'form',
 		
@@ -74,16 +74,23 @@
 			this.options = options; // Save options.
 			if(options.model) this.model = options.model;
 			
-			// Get all the fields of the form that are tied to the model.
-			var $relevantFields = this.$el.find('input, textarea, select, button');
+			this._getFormElements();
+		},
+		
+		'isDynamic': false, // If this form is dynamic, we will call _getFormElements() before every submit.
+		
+		'_getFormElements': function() {
+			var $relevantFields = this.$el.find('input, textarea, select, button'); // Get all the fields of the form that are tied to the model.
 
 			// Fields that are read into the model.
-			this.$formFields = $relevantFields.filter(':not([readonly],[disabled])').filter('input:not([type="submit"],[type="button"],[type="image"])');
+			this.$formFields = $relevantFields.filter(':not([readonly],[disabled])').filter('input:not([type="submit"],[type="button"],[type="image"]), textarea, select');
 			
 			// Get all the submit buttons in the form. Does not update.
 			this.$submitBtns = $relevantFields.filter('input, button').not(':not([type="submit"],[type="image"],[type="reset"])');
-			
 		},
+		
+		// Regex for detecting [] at the end of form names.
+		'_inputArrayDetectorRegex': /\[([a-z0-9_\-]*)\]$/,
 		
 		// This function is for buttons that are not assigned as form submit buttons.
 		// It creates a submit button for the form and clicks on it (so that native form validation is not bypassed).
@@ -113,12 +120,6 @@
 			}
 		},
 		
-		// Not used. But searches the form again for new submit buttons.
-		'_updateSubmitBtns': function() {
-			this.$submitBtns = this.$el.find('input, button').not(':not([type="submit"],[type="image"],[type="reset"])');
-			return this.$submitBtns;
-		},
-		
 		'submit': function(e) {
 			
 			// Don't run this function if there isn't a model set.
@@ -129,6 +130,7 @@
 				return false;
 			}
 			
+			if(this.isDynamic) this._getFormElements(); // Gets all the form elements in the form again.
 			this.updateModel(); // Update the model with form values.
 			
 			// Save the model.
@@ -143,41 +145,77 @@
 		},
 		
 		'updateModel': function() {
+			
+			var emptiedArrays = [], key;
+			
 			this.$formFields.each(_.bind(function(i,e) {
+				
+				// If it is an array attribute, empty it if it hasn't been emptied.
+				var match = this._inputArrayDetectorRegex.exec(e.name);
+				if(match) {
+					key = e.name.substr(0,e.name.length-match[0].length);
+					if(emptiedArrays.indexOf(key) < 0) {
+						this.model.set(key,null);
+						emptiedArrays.push(key);
+					}
+				}
 				
 				if(e.nodeName === 'INPUT') {
 					
 					// If the input object is a checkbox or radio, only record the value if it is checked.
 					switch(e.type.toLowerCase()) {
 						case "checkbox": case "radio":
-							this.model.set(e.name,e.checked);
+							this.setModelData(e.name,e.checked);
 							return;
 						default:
-							if(e.name && e.value) this.model.set(e.name, e.value);
+							if(e.name && e.value) this.setModelData(e.name,e.value);
 					}
 					
 				} else if(e.nodeName.match(/^(TEXTAREA|SELECT)$/i)) {
 					
-					if(e.name && e.value) this.model.set(e.name, e.value);
+					if(e.name && e.value) this.setModelData(e.name, e.value);
 					
 				}
 				
 			},this));
-			
 		},
+		
+		// Get and set function for setting values in the model. Declared so that they can be overriden.
+		'setModelData': function(key,value) {
+			// If the value is suffixed with [], treat it as an array value.
+			var match = this._inputArrayDetectorRegex.exec(key);
+			if(match) {
+				key = key.substr(0,key.length-match[0].length);
+				var data = this.getModelData(key);
+				if(data instanceof Array) {
+					data.push(value);
+					this.model.set(key,data);
+				} else this.model.set(key,[value]);
+				return;
+			}
+		
+			this.model.set(key,value);
+		},
+		'getModelData': function(key) { return this.model.get(key); },
 		
 		// Updates all form fields with reference to model data.
 		'updateFields': function() {
 			this.$formFields.each(_.bind(function(i,e) {
-				var val = this.model.get(e.name);
+				var val = this.getModelData(e.name);
 				if(val) {
 					switch(e.nodeName) {
-					default:
-						e.value = val;
-						break;
 					case "INPUT":
 						if(e.type.match(/^(checkbox|radio)$/i)) e.checked = val ? true : false;
 						else e.value = val;
+						break;
+					case 'SELECT':
+						for(var i=0;i<e.options.length;i++) {
+							if(e.options[i].value == val) e.selectedIndex = i;
+						}
+						break;
+					default:
+						e.value = val;
+						break;
 					}
 				}
 			},this));
@@ -224,9 +262,9 @@
 	
 	// Controls the navigation tab and initializes the other views, storing references to each of them.
 	var SettingsView = Backbone.View.extend({
-		el: '#SettingsView',
+		'el': '#SettingsView',
 		
-		initialize: function() {
+		'initialize': function() {
 			
 			// Store nav tab objects.
 			this.$navTabs = this.$el.find('.nav-tab');			
@@ -241,10 +279,12 @@
 			this.cachingOptionsView = new CachingOptionsView();
 			this.primarySettingsView = new PrimarySettingsView();
 			this.advancedSettingsView = new AdvancedSettingsView();
+			
+			this.$el.slideDown(136);
 		},
 		
 		// Determines which tab to open when the page first loads.
-		_initNavTabs: function(i,e) {
+		'_initNavTabs': function(i,e) {
 			if(!window.location.hash) {
 				var hash = this.$navTabs.first().addClass('nav-tab-active').get(0).hash;
 				$(hash).show();
@@ -255,7 +295,7 @@
 		},
 		
 		// Opens the tab when the button is click on.
-		_tabsOnClick: function(e) {
+		'_tabsOnClick': function(e) {
 			e.preventDefault();
 			window.location.hash = e.currentTarget.hash;
 			this.$navTabs.removeClass("nav-tab-active");
@@ -297,7 +337,7 @@
 			case 'restore_defaults_caching': case 'clear_cache':
 				return true;
 			case 'submit-caching':
-				return AdvancedSettingsView.__super__.submit.call(this, e);
+				return CachingOptionsView.__super__.submit.call(this, e);
 			}
 			
 			return false;
@@ -312,44 +352,56 @@
 	});
 	
 	// Controls the Minification Settings page.
-	var PrimarySettingsView = Backbone.View.extend({
-		el: '#primary-settings',
+	var PrimarySettingsView = FormView.extend({
 		
-		events: {
+		'el': '#primary-settings',
+		
+		'events': {
+			'submit': 'submit',
 			'change input,select': 'onChange',
-			'submit': 'onSubmit'  
+			'click #compression_ignored_tags a.add-new-tag': 'addCompIgnoreTag',
+			'click #compression_ignored_tags a.delete-tag': 'deleteCompIgnoreTag'
 		},
 		
-		initialize: function() {
-			// Get all labels with suboptions.
+		// Adds a new compression ignored tag.
+		'addCompIgnoreTag': function(e) {
+			this.$compressionIgnoredTagsFields.append(this.newIgnoredTagTmpl());
+		},
+		
+		// Delete the compression ignored tag.
+		'deleteCompIgnoreTag': function(e) {
+			e.currentTarget.parentNode.parentNode.removeChild(e.currentTarget.parentNode);
+		},
+		
+		'initialize': function() {
+			
+			this.isDynamic = true; // FormView variable.
 			this.$subOptions = this.$el.find('label[rel]');
 			
-			this.formInputs = {}; // Contains an ID value map to all form DOM objects.
+			// Compression ignored tags.
+			this.$compressionIgnoredTags = $(document.getElementById("compression_ignored_tags"));
+			this.$compressionIgnoredTagsFields = this.$compressionIgnoredTags.children('div');
+			this.newIgnoredTagTmpl = _.template(this.$compressionIgnoredTags.find('script').html());
 			
-			// Set the model for this View.
-			this.model = new PrimarySettings();
-			
-			// Disable presets buttons until we preload the settings.
-			this.$presetBtns = this.$el.find('.button-presets').prop('disabled',true);
-			$.ajax(HTMLMinifierSettings.restURL + '&rest=presets',{
-				'dataType': 'json',
-				'success': _.bind(function(data) {
-					this.$presetBtns.prop('disabled',false);
-					this.presetData = data;
-				},this)
+			// Initialize the FormView object.
+			PrimarySettingsView.__super__.initialize.call(this, {
+				'model': new PrimarySettings(),
+				'save': SettingsSaveOptions
 			});
 			
-			// Make sure all updates to the model updates the web UI.
-			this.listenTo(this.model,'change',this.listenToModel);
-			this.model.fetch();
+			// Update model with form data and make sure the front end display is the same as the model data.
+			this.model.fetch({
+				'success': _.bind(function() {
+					this.updateFields();
+				},this)
+			});
 		},
 		
-		onSubmit: function(e) {
+		'submit': function(e) {
 						
 			var submitBtn = document.activeElement;
 			switch(submitBtn.name) {
-			case 'super_safe': case 'safe':
-			case 'moderate': case 'fully_optimised':
+			case 'super_safe': case 'safe': case 'moderate': case 'fully_optimised':
 				/*
 				this.models.primarySettings.set(this.presetData[submitBtn.name]);
 				quickNotification.open("<strong>Note:</strong> You still need to <em>Save Changes</em> for the Presets to take effect.");
@@ -357,43 +409,43 @@
 				return true;
 			case 'submit-core':				
 				e.preventDefault();
-				
-				submitBtn.disabled = true;
-				quickNotification.close();
-				this.model.save(SettingsSaveOptions.attributes,{
-					'success': function(model,response) {
-						submitBtn.disabled = false;
-						SettingsSaveOptions.callbacks.success(model,response);
-					},
-					'error': function(model,response) {
-						submitBtn.disabled = false;
-						SettingsSaveOptions.callbacks.error(model,response);
-					},
-				});
-				return false;
+				return PrimarySettingsView.__super__.submit.call(this, e);
 			}
 			return false;
 		},
 		
-		onChange: function(e) {
+		'onChange': function(e) {
 			var field = e.currentTarget;
 			
 			switch(field.nodeName) {
 				
 			case 'INPUT':
+				
 				if(field.type.toLowerCase() === 'checkbox') {
-					if(field.required && !field.checked) field.checked = true;
+					
+					var $rel = this.$subOptions.filter('[rel="'+field.id+'"]');
+					
 					if(!field.checked) {
-						this.$subOptions.filter('[rel="'+field.id+'"]').children('input').prop('checked',false);
+						// Disable the related field.
+						if($rel.length > 0) $rel.slideUp(237).children('input').prop('disabled',true);
+						
+						// Force the field to be checked, or uncheck the child field.
+						if(field.required) field.checked = true;
+						else {
+							$rel.children('input').prop('checked',false);
+						}
+					} else {
+						// Enable the related field.
+						if($rel.length > 0) $rel.slideDown(217).children('input').prop('disabled',false);
 					}
-					this.updateModel(field.name,field.checked);
+				} else {
+					if(field.name === "compression_ignored_tags[]") {
+						field.value = field.value.replace(/^(\s*)?\<|\>(\s*)?$/g,"");
+					}
 				}
 				break;
 				
-			case 'SELECT':
-
-				this.updateModel(field.name,field.value);
-				
+			case 'SELECT':				
 				// Force clean CSS and JS comments to be checked if we are choosing 'all_whitespace'.
 				if(field.name === 'compression_mode') {
 					var $clean_comments = this.$el.find('#clean_css_comments, #clean_js_comments');
@@ -402,22 +454,15 @@
 							if(!e.checked) $(e).trigger('click');
 							e.setAttribute('required','required');
 						});
-					} else $clean_comments.removeAttr('required');
+					} else $clean_comments.removeAttr('required');					
 				}
 				break;
 			}
 			
 		},
 		
-		// Listens to changes in the model and updates them accordingly.
-		listenToModel: function(model) {
-			for(var k in model.changed) {
-				this.updateFormField(k,model.changed[k]);
-			}
-		},
-		
 		// Finds the associated key in the model and updates it.
-		updateModel: function(key, value, isSilent) {
+		'setModelData': function(key, value, isSilent) {
 			
 			var changes = {};
 			
@@ -427,17 +472,7 @@
 			switch(key) {
 			default:
 				changes[key] = value;
-				this.model.set(changes,{silent:isSilent});
-				
-				// Only boolean fields can allow the existence of dependent subfields.
-				if(typeof value === 'boolean') {
-					var $rel = this.$subOptions.filter('[rel="'+key+'"]');
-					if($rel.length > 0) {
-						// Hide and disable the field or display and enable it.
-						if(value) $rel.slideDown(217).children('input').prop('disabled',false);
-						else $rel.slideUp(237).children('input').prop('disabled',true);
-					}
-				}
+				PrimarySettingsView.__super__.setModelData.call(this,key,value);
 				return true;
 			case 'remove_comments_with_cdata_tags_css':
 				subkey = 'clean_css_comments';
@@ -471,37 +506,33 @@
 			return true;
 		},
 		
-		// Updates the associated form field.
-		updateFormField: function(key, value) {
-			// Get a reference to the DOM object.
-			var dom;
-			if(this.formInputs.hasOwnProperty(key)) {
-				dom = this.formInputs[key];
-			} else {
-				// Stores a reference to the found object so we don't have to search for it again.
-				dom = this.$el.find('#'+key).get(0);
-				if(dom) 
-					this.formInputs[key] = dom;
-			}
-			
-			//console.log(key,value,dom);
-			if(!dom) {
-				console.warn("There is no form field by the ID of <"+key+"> in <PrimarySettings>.");
-				return;
-			}
-			
-			// Changes the value of the DOM object to <value>.
-			switch(dom.nodeName) {
-			case 'INPUT':
-				if(dom.type === "checkbox")
-					dom.checked = value ? true : false;
+		'getModelData': function(key) {
+			var subkey;
+			switch(key) {
+			default:
+				return this.model.get(key);
+			case 'remove_comments_with_cdata_tags_css':
+				subkey = 'clean_css_comments';
 				break;
-			case 'SELECT':
-				for(var i=0;i<dom.options.length;i++) {
-					if(dom.options[i].value === value) dom.selectedIndex = i;
-				}
+			case 'ignore_link_schema_tags':
+				subkey = 'shift_link_tags_to_head';
+				break;
+			case 'ignore_meta_schema_tags':
+				subkey = 'shift_meta_tags_to_head';
+				break;
+			case 'combine_style_tags':
+				subkey = 'shift_style_tags_to_head';
+				break;
+			case 'remove_comments_with_cdata_tags_js':
+				subkey = 'clean_js_comments';
+				break;
+			case 'combine_javascript_in_script_tags':
+			case 'ignore_async_and_defer_tags':
+				subkey = 'shift_script_tags_to_bottom';
 				break;
 			}
+			var obj = this.model.get(subkey);
+			return obj[key];
 		}
 	});
 	

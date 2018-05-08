@@ -8,6 +8,47 @@
 
 tr.post-logo-row td, tr.post-logo-row th { padding-top:4px; }
 
+.cat-tooltip { font-weight:100; }
+
+noscript { text-align:center;margin:1em 0 !important;display:block; } 
+.notice { padding:0.5em 1em !important; }
+
+.safety-marker {
+	width:6px;
+	height:6px;
+	display:inline-block;
+	border-radius:50%;
+	border-width:1px;
+	border-style:solid;
+	margin-right:1em;
+}
+.safety-marker.safe { background:#0c8;border-color:#0b7; }
+.safety-marker.caution { background:#fb0;border-color:#ea0; }
+.safety-marker.danger { background:#c00;border-color:#b00; }
+
+.button-presets[name="super_safe"] { border-color:#aca; }
+.button-presets[name="super_safe"]:hover { border-color:#9d9; }
+.button-presets[name="safe"] { border-color:#cca; }
+.button-presets[name="safe"]:hover { border-color:#dd8; }
+.button-presets[name="moderate"] { border-color:#ca9; }
+.button-presets[name="moderate"]:hover { border-color:#d98; }
+.button-presets[name="fully_optimised"] { border-color:#c99; }
+.button-presets[name="fully_optimised"]:hover { border-color:#d88; }
+
+input[name="compression_ignored_tags[]"] { text-align:center;font-family:monospace; }
+input[type="number"] { width:60px; }
+#compression_ignored_tags .ignored-tag { margin-bottom:0.34em; }
+#compression_ignored_tags .ignored-tag a { text-decoration:none;color:#aaa;transition:color 0.57s; }
+#compression_ignored_tags .ignored-tag a:hover { text-decoration:none;color:#999; }
+#compression_ignored_tags .ignored-tag a > .dashicons-trash { line-height:29px; }
+
+#compression_ignored_tags > a {
+	text-decoration:none;
+	font-size:93%;
+}
+
+#SettingsView { display:none; }
+
 #QuickNotification {
 	position:fixed;
 	width:20%;
