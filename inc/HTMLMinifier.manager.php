@@ -9,7 +9,7 @@ class HTMLMinifier_Manager {
 	
 	const HTACCESS_MARKER = 'Terresquall\HTMLMinifier'; // Never change this.
 	const PLUGIN_OPTIONS_PREFIX = 'ts_htmlminifier_';
-	const PLUGIN_OPTIONS_VERSION = 3;
+	const PLUGIN_OPTIONS_VERSION = 4;
 	
 	static $Defaults; // Set after class declaration.	
 	static $CurrentOptions; // Current options for HTMLMinifier
@@ -57,7 +57,7 @@ class HTMLMinifier_Manager {
 		);
 		
 		self::init_wp_options(); // Populates self::$CurrentOptions.
-
+		self::upgrade_db(); // Upgrades the DB if it is outdated.
 		self::check_for_rsc_query(); // Checks whether this is a resource request.
 		
 		//load_plugin_textdomain('html-minifier', false, 'languages'); // Multi-language support text domain.
