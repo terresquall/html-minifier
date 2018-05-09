@@ -17,7 +17,7 @@ class HTMLMinifier_Upgrader {
 		if(!isset($options['version'])) $options = self::to_1($options);
 		if($options['version'] <= 1) $options = self::from_1_to_2($options);
 		if($options['version'] <= 2) $options = self::from_2_to_3($options);
-		if($options['version'] <= 3) $options = self::from_3_to_4($options);
+		if($options['version'] <= 4) $options = self::from_3_to_5($options);
 		
 		return $options;
 	}
@@ -78,13 +78,13 @@ class HTMLMinifier_Upgrader {
 		return $options;
 	}
 	
-	private static function from_3_to_4($options) {
+	private static function from_3_to_5($options) {
 		$options['core']['compression_ignored_tags'] = array('textarea','pre');
 		if(!empty($options['core']['compression_ignore_script_tags'])) {
 			$options['core']['compression_ignored_tags'][] = 'script';
 			unset($options['core']['compression_ignore_script_tags']);
 		}
-		$options['version'] = 4;
+		$options['version'] = 5;
 		return $options;
 	}
 	

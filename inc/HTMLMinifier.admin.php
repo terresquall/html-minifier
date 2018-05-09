@@ -84,11 +84,7 @@ class HTMLMinifier_Admin {
 			if(HTMLMinifier_Manager::update_options($options)) return -2;
 			else return 0;
 		} elseif(isset($post['clear_cache'])) {
-			$glob = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
-			foreach($glob as $file) {
-				if(preg_match('/^index\\.php$/i',basename($file))) continue;
-				unlink($file);
-			}
+			HTMLMinifier_Manager::clear_cache();
 			return -3;
 		}
 		

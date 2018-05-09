@@ -9,7 +9,7 @@ class HTMLMinifier_Manager {
 	
 	const HTACCESS_MARKER = 'Terresquall\HTMLMinifier'; // Never change this.
 	const PLUGIN_OPTIONS_PREFIX = 'ts_htmlminifier_';
-	const PLUGIN_OPTIONS_VERSION = 4;
+	const PLUGIN_OPTIONS_VERSION = 5;
 	
 	static $Defaults; // Set after class declaration.	
 	static $CurrentOptions; // Current options for HTMLMinifier
@@ -19,8 +19,8 @@ class HTMLMinifier_Manager {
 		// For minifying resources.
 		'minify_css_files' => false,
 		'minify_js_files' => false,
-		'browser_rsc_caching' => '24',
 		
+		'browser_rsc_caching' => '24',
 		'ignore_rsc_minify_regex' => '/jquery/i',
 		
 		// Which ones to minify?
@@ -118,8 +118,10 @@ class HTMLMinifier_Manager {
 				header("Content-Type: text/$mime;charset=utf-8;");
 				
 				// Do we want to tell the browser to cache this resource?
-				$browser_cache = intval(self::$CurrentOptions['manager']['browser_rsc_caching']);
-				if($browser_cache) header('Cache-Control: max-age=' . ($browser_cache*3600));
+				if(isset(self::$CurrentOptions['manager']['browser_rsc_caching'])) {
+					$browser_cache = intval(self::$CurrentOptions['manager']['browser_rsc_caching']);
+					if($browser_cache) header('Cache-Control: max-age=' . ($browser_cache*3600));
+				}
 				
 				echo $output;
 				exit;
@@ -132,7 +134,7 @@ class HTMLMinifier_Manager {
 		
 	}
 	
-	// Adds a snippet to the Wordpress .htaccess so that we can process .css and .js files too.
+	// Adds a snippet to the WordPress .htaccess so that we can process .css and .js files too.
 	// $add will add the HTMLMinifier .htaccess redirector, if false will remove instead.
 	public static function write_htaccess($add = true) {
 		$htaccess = ABSPATH . '.htaccess';
@@ -155,7 +157,7 @@ class HTMLMinifier_Manager {
 			}
 			
 			// Save output.
-			file_put_contents($htaccess,$content);
+			file_put_contents($htaccess,$content,LOCK_EX);
 		}
 	}
 	
@@ -190,13 +192,23 @@ class HTMLMinifier_Manager {
 	// Checks if we should update the database for this plugin.
 	private static function upgrade_db() {
 		$option = self::$CurrentOptions;
-		if(!isset($option['version']) || $option['version'] <= self::PLUGIN_OPTIONS_VERSION) {
+		if(!isset($option['version']) || $option['version'] < self::PLUGIN_OPTIONS_VERSION) {
 			require_once HTML_MINIFIER__PLUGIN_DIR . 'inc/HTMLMinifier.upgrader.php';
 			$option = HTMLMinifier_Upgrader::run($option);
 			self::update_options($option,true); // Save the upgrade.
 		}
 		self::$CurrentOptions = $option;
 		return $option;
+	}
+	
+	public static function clear_cache() {
+		$glob = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
+		if(count($glob) <= 0) return false;
+		foreach($glob as $file) {
+			if(preg_match('/^index\\.php$/i',basename($file))) continue;
+			unlink($file);
+		}
+		return true;
 	}
 	
 	// This function hijacks the main query and injects a cached page if there is any.
@@ -282,11 +294,11 @@ class HTMLMinifier_Manager {
 				case 'ignore_rsc_minify_regex':
 					break;
 				}
-				
-				// Add / remove a snippet to the HTACCESS when we want to minify JS or CSS files.
-				if($options['manager']['minify_css_files'] || $options['manager']['minify_js_files']) self::write_htaccess(true);
-				else self::write_htaccess(false);
 			}
+			
+			// Add / remove a snippet to the HTACCESS when we want to minify JS or CSS files.
+			if(!empty($options['manager']['minify_css_files']) || !empty($options['manager']['minify_js_files'])) self::write_htaccess(true);
+			else self::write_htaccess(false);
 			
 			// Loops through the CACHING array to see if it is all right.
 			foreach($options['caching'] as $k => $v) {
@@ -334,7 +346,7 @@ class HTMLMinifier_Manager {
 	// Activation hook.
 	public static function activate() { 
 		self::init_wp_options();
-		self::upgrade_db();
+		//self::upgrade_db();
 		$options = self::$CurrentOptions['manager'];
 		
 		// Add / remove a snippet to the HTACCESS when we want to minify JS or CSS files.
@@ -344,11 +356,5 @@ class HTMLMinifier_Manager {
 	
 	// Deactivation hook.
 	public static function deactivate() { self::write_htaccess(false); }
-
-	// Post upgrade hook.
-	public static function upgrade() {
-		self::init_wp_options();
-		self::upgrade_db();
-	}
 }
 ?>

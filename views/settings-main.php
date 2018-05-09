@@ -131,14 +131,16 @@ if (!function_exists( 'add_action' )) {
 									$shift_script_tags_to_bottom = isset(HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom']) && HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom'];
 									if($shift_script_tags_to_bottom) echo ' checked="checked"';
 								?>/> <?= __('Shift all <code>&lt;script&gt;</code> tags to the end of <code>&lt;body&gt;</code>','html-minifier'); ?>
-							</label></p>
+							</label>
+							<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('This and its child options may break some parts of your site, depending on how your Javascript is written. Test after activating.','html-minifier'); ?>"></i>
+							</p>
 							<p><label for="combine_javascript_in_script_tags" class="tooltip" title="<?= __('Only applicable for &lt;script&gt; tags with an unspecified MIME type or of MIME type &quot;text/javascript&quot;.','html-minifier'); ?>" rel="shift_script_tags_to_bottom" style="padding-left:1.7em;<?php 
 								if(!$shift_script_tags_to_bottom) echo 'display:none;'
 							?>">
 								<input name="combine_javascript_in_script_tags" type="checkbox" id="combine_javascript_in_script_tags" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom']['combine_javascript_in_script_tags']) && HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom']['combine_javascript_in_script_tags']) echo ' checked="checked"';
-								?>/> <?= __('Combine Javascript in <code>&lt;script&gt;</code> tags','html-minifier'); ?>
-							</label></p>
+								?>/> <?= __('Combine Javascript in <code>&lt;script&gt;</code> tags','html-minifier'); ?></label>
+							</p>
 							<p><label for="ignore_async_and_defer_tags" class="tooltip" title="<?= __('Only applicable for &lt;script&gt; tags with an unspecified MIME type or of MIME type &quot;text/javascript&quot;.','html-minifier'); ?>" rel="shift_script_tags_to_bottom" style="padding-left:1.7em;<?php 
 								if(!$shift_script_tags_to_bottom) echo 'display:none;'
 							?>">
@@ -161,6 +163,7 @@ if (!function_exists( 'add_action' )) {
 										echo '<option value="'.$k.'"'.(HTMLMinifier_Manager::$CurrentOptions['core']['compression_mode']===$k?' selected="selected"':'').'>'.__($v,'html-minifier').'</option>';
 								?>
 							</select>
+							<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('Using \'all_whitespace\' may break some parts of Javascript in your site. Test if you are using it.','html-minifier'); ?>"></i>
                         </fieldset>
                     </td>
                 </tr>
@@ -206,6 +209,7 @@ if (!function_exists( 'add_action' )) {
 	
 	<form method="post" action="#advanced-settings" id="advanced-settings" class="nav-window">
 		<?php wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
+		<p class="notice"><i class="dashicons dashicons-warning"></i> Be careful with the settings here. They are very powerful, but might also break your site.</p>
 		<table class="form-table">
 			<tbody>
 				<tr>
@@ -217,17 +221,21 @@ if (!function_exists( 'add_action' )) {
 								<input type="checkbox" name="minify_css_files" id="minify_css_files" value="1"<?php 
 									if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_css_files'])) echo ' checked="checked"';
 								?>/> <?= __('Minify CSS files (<em>.css</em>)','html-minifier'); ?>
-							</label></p>
+							</label>
+							<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i></p>
                         </fieldset>
 						<fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify JS files','html-minifier'); ?></span></legend>
-                            <p><label for="minify_js_files" class="tooltip" title="<?= __('Minifies Javascript files that are served from this Wordpress installation.','html-minifier'); ?>">
-								<input type="checkbox" name="minify_js_files" id="minify_js_files" value="1"<?php 
-									if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_js_files'])) echo ' checked="checked"';
-								?>/> <?= __('Minify Javascript files (<em>.js</em>)','html-minifier'); ?>
-								<br/><small style="color:#d00;">May cause errors if lines in Javascript are not properly truncated.</small>
-							</label></p>
-							
+                            <p>
+								<label for="minify_js_files" class="tooltip" title="<?= __('Minifies Javascript files that are served from this Wordpress installation.','html-minifier'); ?>">
+									<input type="checkbox" name="minify_js_files" id="minify_js_files" value="1"<?php 
+										if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_js_files'])) echo ' checked="checked"';
+									?>/> <?= __('Minify Javascript files (<em>.js</em>)','html-minifier'); ?>
+									<br/>
+								</label>
+								<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('May also break some of your Javascript if they are not properly truncated. Check your page for errors on your Developer Console after activating.','html-minifier'); ?>"></i>
+								<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i>
+							</p>
                         </fieldset>
                     </td>
                 </tr>
@@ -261,11 +269,14 @@ if (!function_exists( 'add_action' )) {
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify WP-Admin source','html-minifier'); ?></span></legend>
-                            <p><label for="minify_wp_admin" class="tooltip" title="<?= __('Minifies the HTML source of WP-Admin pages according to the settings above. WARNING: Might break WP-Admin depending on the theme / plugins installed.','html-minifier'); ?>">
-								<input type="checkbox" name="minify_wp_admin" id="minify_wp_admin" value="1"<?php 
-									if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_wp_admin'])) echo ' checked="checked"';
-								?>/> <?= __('Minify WP-Admin source','html-minifier'); ?>
-							</label></p>
+                            <p>
+								<label for="minify_wp_admin" class="tooltip" title="<?= __('Minifies the HTML source of WP-Admin pages according to the settings above. WARNING: Might break WP-Admin depending on the theme / plugins installed.','html-minifier'); ?>">
+									<input type="checkbox" name="minify_wp_admin" id="minify_wp_admin" value="1"<?php 
+										if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_wp_admin'])) echo ' checked="checked"';
+									?>/> <?= __('Minify WP-Admin source','html-minifier'); ?>
+								</label>
+								<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('If activating this breaks your site, delete this plugin via FTP and re-install it.','html-minifier'); ?>"></i>
+							</p>
                         </fieldset>
 						<fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify WP front-end source','html-minifier'); ?></span></legend>

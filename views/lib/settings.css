@@ -26,6 +26,12 @@ noscript { text-align:center;margin:1em 0 !important;display:block; }
 .safety-marker.caution { background:#fb0;border-color:#ea0; }
 .safety-marker.danger { background:#c00;border-color:#b00; }
 
+.warning-toggle.red { color:#a00;cursor:pointer; }
+.warning-toggle.red:hover { color:#d00; }
+.warning-toggle.orange { color:#e90;cursor:pointer; }
+.warning-toggle.orange:hover { color:#fa0; }
+.warning-toggle { margin:.2em 0 .5em .05em !important; }
+
 .button-presets[name="super_safe"] { border-color:#aca; }
 .button-presets[name="super_safe"]:hover { border-color:#9d9; }
 .button-presets[name="safe"] { border-color:#cca; }
