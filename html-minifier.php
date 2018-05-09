@@ -3,7 +3,6 @@
  * @package HTMLMinifier
  */
 /*
-GitHub Plugin URI: terresquall/html-minifier
 GitHub Plugin URI: https://github.com/terresquall/html-minifier
 Plugin Name: HTML Minifier
 Plugin URI: http://www.terresquall.com/web/html-minifier/
