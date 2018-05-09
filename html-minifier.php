@@ -3,6 +3,8 @@
  * @package HTMLMinifier
  */
 /*
+GitHub Plugin URI: terresquall/html-minifier
+GitHub Plugin URI: https://github.com/terresquall/html-minifier
 Plugin Name: HTML Minifier
 Plugin URI: http://www.terresquall.com/web/html-minifier/
 Description: Minifies and caches the HTML output of your Wordpress site, along with accompanying CSS and Javascript files. There are no embedded ads, no feature that is pay-to-use, no tricky money-making mechanisms. Just a source-minifying tool that is as simple and useful as possible.
