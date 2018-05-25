@@ -3,7 +3,7 @@
 This class interfaces with the HTMLMinifier class to minify the HTML source.
 It also interfaces with Wordpress.
 
-Dated: 12 March 2018
+Dated: 25 May 2018
 */
 class HTMLMinifier_Manager {
 	
@@ -127,11 +127,24 @@ class HTMLMinifier_Manager {
 				exit;
 				
 			} else {
+				// Force 404 on WordPress if file does not exist.
+				if(!file_exists($filepath)) {
+					add_action('wp',array('HTMLMinifier_Manager','set_404'));
+					return;
+				}
+				
 				trigger_error('Please disable HTMLMinifier on your WordPress installation, as your PHP does not have sufficient permissions to allow HTMLMinifier to work.',E_USER_ERROR);
 				exit;
 			}
 		}
-		
+	}
+	
+	// For triggering a 404.
+	public static function set_404() {
+		global $wp_query;
+		$wp_query->set_404();
+		status_header(404);
+		return;
 	}
 	
 	// Adds a snippet to the WordPress .htaccess so that we can process .css and .js files too.
@@ -357,4 +370,3 @@ class HTMLMinifier_Manager {
 	// Deactivation hook.
 	public static function deactivate() { self::write_htaccess(false); }
 }
-?>

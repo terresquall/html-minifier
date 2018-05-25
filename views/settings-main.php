@@ -3,7 +3,7 @@ if (!function_exists( 'add_action' )) {
 	echo 'Hi there!  I\'m just a component of a Wordpress plugin. Not much I can do when called directly.';
 	exit;
 }
-?><noscript class="notice"><i class="dashicons dashicons-warning"></i> You have disabled Javascript on your browser. Please enable it as this page cannot work without Javascript.</noscript>
+?><noscript class="notice"><i class="dashicons dashicons-editor-help"></i> You have disabled Javascript on your browser. Please enable it as this page cannot work without Javascript.</noscript>
 <div class="wrap" id="SettingsView">
 	
     <h1>HTML Minifier &mdash; <?= __('Settings','html-minifier'); ?></h1><?php
@@ -132,7 +132,7 @@ if (!function_exists( 'add_action' )) {
 									if($shift_script_tags_to_bottom) echo ' checked="checked"';
 								?>/> <?= __('Shift all <code>&lt;script&gt;</code> tags to the end of <code>&lt;body&gt;</code>','html-minifier'); ?>
 							</label>
-							<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('This and its child options may break some parts of your site, depending on how your Javascript is written. Test after activating.','html-minifier'); ?>"></i>
+							<i class="dashicons dashicons-editor-help warning-toggle orange tooltip" title="<?= __('This and its child options may break some parts of your site, depending on how your Javascript is written. Test after activating.','html-minifier'); ?>"></i>
 							</p>
 							<p><label for="combine_javascript_in_script_tags" class="tooltip" title="<?= __('Only applicable for &lt;script&gt; tags with an unspecified MIME type or of MIME type &quot;text/javascript&quot;.','html-minifier'); ?>" rel="shift_script_tags_to_bottom" style="padding-left:1.7em;<?php 
 								if(!$shift_script_tags_to_bottom) echo 'display:none;'
@@ -146,7 +146,7 @@ if (!function_exists( 'add_action' )) {
 							?>">
 								<input name="ignore_async_and_defer_tags" type="checkbox" id="ignore_async_and_defer_tags" value="1"<?php 
 									if(isset(HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom']['ignore_async_and_defer_tags']) && HTMLMinifier_Manager::$CurrentOptions['core']['shift_script_tags_to_bottom']['ignore_async_and_defer_tags']) echo ' checked="checked"';
-								?>/> <?= __('Ignore <code>&lt;script&gt;</code> tags with <code>async</code> or <code>defer</code> attributes','html-minifier'); ?>
+								?>/> <?= __('Ignore <code>&lt;script&gt;</code> tags labelled <code>async</code> or <code>defer</code>','html-minifier'); ?>
 							</label></p>
                         </fieldset>
                     </td>
@@ -163,7 +163,7 @@ if (!function_exists( 'add_action' )) {
 										echo '<option value="'.$k.'"'.(HTMLMinifier_Manager::$CurrentOptions['core']['compression_mode']===$k?' selected="selected"':'').'>'.__($v,'html-minifier').'</option>';
 								?>
 							</select>
-							<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('Using \'all_whitespace\' may break some parts of Javascript in your site. Test if you are using it.','html-minifier'); ?>"></i>
+							<i class="dashicons dashicons-editor-help warning-toggle orange tooltip" title="<?= __('Using \'all_whitespace\' may break some parts of Javascript in your site. Test if you are using it.','html-minifier'); ?>"></i>
                         </fieldset>
                     </td>
                 </tr>
@@ -209,7 +209,7 @@ if (!function_exists( 'add_action' )) {
 	
 	<form method="post" action="#advanced-settings" id="advanced-settings" class="nav-window">
 		<?php wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
-		<p class="notice"><i class="dashicons dashicons-warning"></i> Be careful with the settings here. They are very powerful, but might also break your site.</p>
+		<p class="notice"><i class="dashicons dashicons-editor-help"></i> <?= __('The settings below are very powerful, but &mdash; depending on your server configuration &mdash; might also cause errors that lock you of your site. Make sure you know how to restore your site if you try these features.','html-minifier'); ?></p>
 		<table class="form-table">
 			<tbody>
 				<tr>
@@ -222,7 +222,7 @@ if (!function_exists( 'add_action' )) {
 									if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_css_files'])) echo ' checked="checked"';
 								?>/> <?= __('Minify CSS files (<em>.css</em>)','html-minifier'); ?>
 							</label>
-							<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i></p>
+							<i class="dashicons dashicons-editor-help warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i></p>
                         </fieldset>
 						<fieldset>
                             <legend class="screen-reader-text"><span><?= __('Minify JS files','html-minifier'); ?></span></legend>
@@ -233,8 +233,8 @@ if (!function_exists( 'add_action' )) {
 									?>/> <?= __('Minify Javascript files (<em>.js</em>)','html-minifier'); ?>
 									<br/>
 								</label>
-								<i class="dashicons dashicons-warning warning-toggle orange tooltip" title="<?= __('May also break some of your Javascript if they are not properly truncated. Check your page for errors on your Developer Console after activating.','html-minifier'); ?>"></i>
-								<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i>
+								<i class="dashicons dashicons-editor-help warning-toggle orange tooltip" title="<?= __('May also break some of your Javascript if they are not properly truncated. Check your page for errors on your Developer Console after activating.','html-minifier'); ?>"></i>
+								<i class="dashicons dashicons-editor-help warning-toggle red tooltip" title="<?= __('Modifies your .htaccess file. Make sure you know how to work with .htaccess before using this.','html-minifier'); ?>"></i>
 							</p>
                         </fieldset>
                     </td>
@@ -242,7 +242,7 @@ if (!function_exists( 'add_action' )) {
 				<tr>
                     <th scope="row">
 						<label for="ignore_rsc_minify_regex"><?= __('Browser Resource Caching','html-minifier'); ?></label><br/>
-						<small class="cat-tooltip"><?= __('If non-zero, tells the client browser to cache minified resource files.','html-minifier'); ?></small>
+						<small class="cat-tooltip"><?= __('If not 0, tells the client browser to cache minified resource files.','html-minifier'); ?></small>
 					</th>
                     <td>
                         <fieldset>
@@ -275,7 +275,7 @@ if (!function_exists( 'add_action' )) {
 										if(!empty(HTMLMinifier_Manager::$CurrentOptions['manager']['minify_wp_admin'])) echo ' checked="checked"';
 									?>/> <?= __('Minify WP-Admin source','html-minifier'); ?>
 								</label>
-								<i class="dashicons dashicons-warning warning-toggle red tooltip" title="<?= __('If activating this breaks your site, delete this plugin via FTP and re-install it.','html-minifier'); ?>"></i>
+								<i class="dashicons dashicons-editor-help warning-toggle red tooltip" title="<?= __('If activating this breaks your site, delete this plugin via FTP and re-install it.','html-minifier'); ?>"></i>
 							</p>
                         </fieldset>
 						<fieldset>
@@ -301,7 +301,7 @@ if (!function_exists( 'add_action' )) {
 	
 	<form method="post" action="#caching" id="caching" class="nav-window">
 		<?php wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'settings_nonce',true,true); ?>
-		<p class="notice"><i class="dashicons dashicons-admin-generic"></i> If you use the caching features on HTML Minifier, it may cause other WordPress caching plugins to work incorrectly.</p>
+		<p class="notice"><i class="dashicons dashicons-admin-generic"></i> <?= wp_kses(__('Does not cache web pages at the moment. Use in tandem with <a href="https://wordpress.org/plugins/wp-super-cache/" target="_blank">WP Super Cache</a> if you want to cache pages.','html-minifier'), array('a' => array('href' => array(),'target' => array()))); ?>.</p>
 		<table class="form-table">
             <tbody>
 				<tr>
@@ -353,7 +353,7 @@ if (!function_exists( 'add_action' )) {
 	<form method="post" action="#feedback-bug-report" id="feedback-bug-report" class="nav-window">
 		<h2 class="title dashicons-before dashicons-admin-comments"> <?= __('We welcome your feedback','html-minifier'); ?></h2>
 		<p class="feedback-field"><?= 
-			__("HTML Minifier strives to be a useful, lightweight and no-frills plugin that helps to minify the HTML output of your site. Let us know if you find any bugs with the plugin, have suggestions on how we can improve, or if there are additional features you'd like to see in future versions.",'html-minifier');
+			__("HTML Minifier is a plugin that strives to make the web a more efficient place. Help it perform its duties more effectively by notifying us of any bugs you may find, or by giving us feedback on how to make it better.",'html-minifier');
 		?></p>
 		<?php echo wp_nonce_field( HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'feedback_nonce', HTMLMinifier_Manager::PLUGIN_OPTIONS_PREFIX.'feedback_nonce',true,true); ?>
         <textarea rows="7" name="feedback-text" id="feedback-text" placeholder="<?= __('Speak away!','html-minifier'); ?>" class="feedback-field"><?php
@@ -367,7 +367,7 @@ if (!function_exists( 'add_action' )) {
 	
 	<div id="about" class="nav-window">
 		<h2 class="title dashicons-before dashicons-info"> <?= __('About HTML Minifier','html-minifier'); ?></h2>
-		<p class="feedback-field"><?= __('HTML Minifier is a server-side source code minifier and cacher that is available both as a PHP class and as a WordPress plugin. It is designed to optimise HTML, CSS and Javascript output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.','html-minifier'); ?></p>
+		<p class="feedback-field"><?= __('HTML Minifier is a server-side source code minifier, reorganiser and caching tool and that is available both as a PHP class and as a WordPress plugin. It is designed to optimise HTML, CSS and Javascript output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.','html-minifier'); ?></p>
 		<p class="feedback-field"><?= __('A variety of optimisation options and minification styles are available in the plugin, and they can be selected from or toggled depending on the user\'s needs. To see more information about what each option does or to download the PHP version, <a href="http://www.terresquall.com/web/html-minifier/" target="_blank">click here</a>.','html-minifier'); ?></p>
 		<p class="feedback-field"><?= __('There is also a <a href="https://github.com/terresquall/html-minifier">GitHub repository</a> for the project, if you want to contribute. Alternatively, <a href="https://paypal.me/Terresquall" target="_blank">donations</a> are also always welcome.','html-minifier'); ?></p>
 		<table class="about-table">

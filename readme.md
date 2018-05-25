@@ -1,17 +1,18 @@
 === HTML Minifier ===
 
 Contributors: terresquall
-Tags: source minifier, minify, html, javascript, css, html optimiser, caching
+Tags: source minifier, minify, html, javascript, css, optimisation, caching, reorganisation
 Requires at least: 3.6.4
-Tested up to: 4.9.5
-Stable tag: 2.2.0
+Tested up to: 4.9.6
+Stable tag: 2.2.3
+Requires PHP: 5.4
 License: GPLv2 or later
 
-A server-side source code minifier for WordPress, HTML Minifier is designed to minimise, optimise and cache HTML, Javascript and CSS output on your site.
+Provides a variety of optimisation options (e.g. minification, caching, code reorganisation) for your site's source code to help meet today's web performance standards.
 
 == Description ==
 
-HTML Minifier is a server-side source code minifier and cacher that is available both as a PHP class and as a WordPress plugin. It is designed to optimise HTML, CSS and Javascript output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.
+HTML Minifier is a server-side source code minifier, reorganiser and caching tool and that is available both as a PHP class and as a WordPress plugin. It is designed to optimise HTML, CSS and Javascript output sent out to the client by removing whitespace, and by reorganising and / or merging &lt;link&gt;, &lt;style&gt; and &lt;script&gt; tags scattered across HTML pages that are built dynamically on server-side applications.
 
 A variety of optimisation options and minification styles are available in the plugin, and they can be selected from or toggled depending on the user's needs. To see the full list of options or to download the PHP version, [click here](http://www.terresquall.com/web/html-minifier/).
 
@@ -19,9 +20,30 @@ There is also a [GitHub repository](https://github.com/terresquall/html-minifier
 
 == Installation ==
 
-Unzip the downloaded file into the plugin folder in your blog and activate it in WP-Admin. Alternatively, you can just download it directly from WP-Admin and activate it.
+Unzip the downloaded file into the plugin folder in your WordPress site and activate it in WP-Admin. Alternatively,download it directly from WP-Admin and activate it.
 
 == Changelog ==
+
+= 2.2.3 =
+*Release Date - 25 May 2018*
+* Fixed a bug where if you enabled .css and .js minification, visiting non-existing .css or .js files would not show a 404.
+
+= 2.2.2 =
+*Release Date - 13 May 2018*
+
+* Fixed a bug causing &lt;style scoped&gt; tags to not have their comments cleaned.
+* Fixed a bug with &lt;style&gt; types nested in IE conditional tags causing a fatal error.
+* &lt;script&gt; tags that have an 'id' attribute are no longer merged with other scripts.
+* Non-Javascript &lt;script&gt; tags are no longer moved if you choose to move Javascript to the bottom of the page, and comments in these non-Javascript tags are no longer removed.
+* Improved detection algorithm for identifying what are Javascript blocks and what are not.
+
+= 2.2.1 =
+*Release Date - 12 May 2018*
+
+* Changed the exclamation mark icons added in version 2.2.0 (this was an unlisted change) to question mark icons, to better signify their function as tooltip. The exclamation mark made it seem like they were issues that required the user's attention.
+* HTML Minifier has been tested to work with WP Super Cache, and the tooltip on the Caching tab of the settings page was changed to reflect this.
+* Changed the tooltip on top of the Advanced Settings page to more accurately explain why certain things might break your site.
+* Rewrote the description of this plugin, so that it also describes recently-implemented features.
 
 = 2.2.0 =
 *Release Date - 9 May 2018*

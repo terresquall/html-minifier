@@ -8,9 +8,13 @@ is fine.
 
 @author		Terence Pek <terence@terresquall.com>
 @website	www.terresquall.com
-@version	3.0.8
-@dated		30/04/2018
-@notes		- Added support for 'compression_ignored_tags' and deprecated 'compression_ignore_script_tags'.
+@version	3.0.9
+@dated		13/05/2018
+@notes		- Fixed a bug causing <style scoped> tags to not have their comments cleaned.
+			- Fixed a bug with <style> types nested in IE conditional tags causing a fatal error.
+			- <script> tags that have an 'id' attribute are no longer merged with other scripts.
+			- Non-Javascript <script> tags are no longer moved, and Javascript comments in them are no longer removed.
+			- Added support for 'compression_ignored_tags' and deprecated 'compression_ignore_script_tags'.
 			- Double slashes (//) in Javascript regex blocks no longer get identified as comments.
 			- Added support for minifying JS / CSS files.
 			- Modified ::compress() so that it can now exclude tags from compression. Excluded <textarea> tags from being compressed.
@@ -27,7 +31,7 @@ class HTMLMinifier {
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '3.0.8';
+	const VERSION = '3.0.9';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -81,7 +85,6 @@ class HTMLMinifier {
 			'shift_style_tags_to_head' => array('combine_style_tags' => true),
 			'shift_script_tags_to_bottom' => array('combine_javascript_in_script_tags' => true, 'ignore_async_and_defer_tags' => true),
 			//'compression_ignore_script_tags' => false, //LEGACY ATTRIBUTE
-			'compression_ignored_tags' => array('textarea','pre'),
 			'compression_mode' => 'all_whitespace'
 		)
 	);
@@ -409,9 +412,12 @@ class HTMLMinifier {
 				// Shifts all found <style> tags to head.
 				if($options['shift_style_tags_to_head']) {
 					
-					// Ignore <style> tags that have the scoped attribute.
+					// Ignore <style> tags that have the scoped attribute (process them for comments first).
 					$style = self::get_tag_attributes($css[1][$k]);
-					if(isset($style['scoped'])) continue;
+					if(isset($style['scoped'])) {
+						if($options['clean_css_comments']) $source = self::replace($m,$css[0][$k],$source);
+						continue;
+					}
 					
 					// For use below.
 					$style_tag = $css[0][$k];
@@ -464,9 +470,9 @@ class HTMLMinifier {
 				if($comment_tag && isset($comments[$comment_tag])) {
 					
 					// Find style tags in the comment and remove CSS comments within.
-					if($options['remove_css_comments']) {
+					if($options['clean_css_comments']) {
 						$styles = self::get_tags('style',$comments[$comment_tag]);
-						foreach($styles as $key => $str) {
+						foreach($styles[0] as $key => $str) {
 							if(!preg_match('@^<style@i',$str)) continue;
 							$styles[2][$key] = self::remove_comments($styles[2][$key],'css',$ignore_cdata_comments);
 							$styles[0][$key] = $styles[1][$key] . $styles[2][$key] . $styles[3][$key];
@@ -604,7 +610,7 @@ class HTMLMinifier {
 		$scripts = self::get_tags(array('script','noscript','!--'),$source);
 		foreach($scripts[0] as $k => $s) {
 			
-			if(preg_match('@^<noscript@i',$scripts[1][$k])) continue; // Ignore everything inside a <noscript> tag.
+			if(preg_match('@^<noscript@i',$scripts[1][$k])) continue; // Causes all tags embedded in <noscript> to be ignored.
 			
 			if(preg_match('@!--@',$s)) {
 				
@@ -622,6 +628,10 @@ class HTMLMinifier {
 							if(preg_match('@^<noscript@i',$str)) continue; // Ignore contents inside <noscript> tags.
 							
 							$attrb = self::get_tag_attributes($str);
+							
+							// If this tag is not Javascript, let's ignore it and move on.
+							if(isset($attrb['type']) && !preg_match('@(text|application)/(x-)?javascript@i',$attrb['type']))
+								continue;
 							
 							// Compress script if we set script compression to true.
 							if(trim($in_script[2][$id]) && $options['clean_js_comments'])
@@ -663,6 +673,10 @@ class HTMLMinifier {
 
 				$attrb = self::get_tag_attributes($scripts[1][$k]);
 				
+				// If this tag is not Javascript, let's ignore it and move on.
+				if(isset($attrb['type']) && !preg_match('@(text|application)/(x-)?javascript@i',$attrb['type']))
+					continue;
+				
 				// Wrap scripts in conditionals with respective conditionals.
 				$is_wrapped = self::_is_in_wrapped_conditionals($scripts[0][$k],$wrapped_conditionals,$source);
 				if($is_wrapped){
@@ -682,14 +696,12 @@ class HTMLMinifier {
 					if( $dont_ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer'])) ) continue;
 					
 					// Figure out if this is a piece of script we should combine or just append at the end.
-					if(!$is_wrapped && trim($scripts[2][$k]) && $combine_javascript) {
+					if(!isset($attrb['id']) && !$is_wrapped && trim($scripts[2][$k]) && $combine_javascript) {
 						
-						if(!$attrb || (count($attrb) === 1 && (isset($attrb['type']) && $attrb['type'] == 'text/javascript'))) {
-							// We are moving the script to the end of the page.
-							$source = self::replace($s,'',$source);
-							$script_combine .= $scripts[2][$k] . PHP_EOL;
-							continue;
-						}
+						// We are moving the script to the end of the page.
+						$source = self::replace($s,'',$source);
+						$script_combine .= $scripts[2][$k] . PHP_EOL;
+						continue;
 						
 					}
 					
