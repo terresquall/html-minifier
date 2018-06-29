@@ -358,9 +358,23 @@
 		
 		'events': {
 			'submit': 'submit',
+			'click .button-presets': 'confirmResetDefaults',
 			'change input,select': 'onChange',
 			'click #compression_ignored_tags a.add-new-tag': 'addCompIgnoreTag',
 			'click #compression_ignored_tags a.delete-tag': 'deleteCompIgnoreTag'
+		},
+		
+		'confirmResetDefaults':function(e) { return confirm("Note that this will override your current plugin settings with the preset ones that you have chosen. Please confirm to proceed."); },
+		
+		'showMoreToggle':function(e) {
+			if(this.$more.is(':visible')) {
+				this.$more.fadeOut(97);
+				this.$showMoreBtn.html(this.$showMoreBtn.attr('data-more'));
+			} else {
+				this.$more.fadeIn(97);
+				this.$showMoreBtn.html(this.$showMoreBtn.attr('data-less'));
+			}
+			e.currentTarget.blur();
 		},
 		
 		// Adds a new compression ignored tag.
@@ -377,6 +391,11 @@
 			
 			this.isDynamic = true; // FormView variable.
 			this.$subOptions = this.$el.find('label[rel]');
+			
+			_.bindAll(this,'showMoreToggle');
+			this.$showMore = this.$el.find('tr.show-more');
+			this.$showMoreBtn = this.$showMore.find('a').on('click',this.showMoreToggle);
+			this.$more = this.$showMore.nextAll().hide(); // Hide all the form fields below Show More.
 			
 			// Compression ignored tags.
 			this.$compressionIgnoredTags = $(document.getElementById("compression_ignored_tags"));
@@ -543,6 +562,13 @@
 	
 	var AdvancedSettingsView = FormView.extend({
 		'el':'#advanced-settings',
+		
+		'events': {
+			'submit': 'submit',
+			'click .button-presets': 'confirmResetDefaults'
+		},
+		
+		'confirmResetDefaults':function(e) { return confirm("Note that this will override your current plugin settings with the defaults. Please confirm to proceed."); },
 		
 		'initialize': function() {			
 			

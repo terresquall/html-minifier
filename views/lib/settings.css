@@ -53,6 +53,9 @@ input[type="number"] { width:60px; }
 	font-size:93%;
 }
 
+tr.show-more > td { padding:3px 10px;font-size:89%; }
+tr.show-more > td > a { text-decoration:none; }
+
 #SettingsView { display:none; }
 
 #QuickNotification {

@@ -9,7 +9,7 @@ class HTMLMinifier_Manager {
 	
 	const HTACCESS_MARKER = 'Terresquall\HTMLMinifier'; // Never change this.
 	const PLUGIN_OPTIONS_PREFIX = 'ts_htmlminifier_';
-	const PLUGIN_OPTIONS_VERSION = 5;
+	const PLUGIN_OPTIONS_VERSION = 6;
 	
 	static $Defaults; // Set after class declaration.	
 	static $CurrentOptions; // Current options for HTMLMinifier
@@ -95,7 +95,7 @@ class HTMLMinifier_Manager {
 					if(!empty(self::$CurrentOptions['caching']['enable_rsc_caching'])) {
 						
 						// Check if cache directory is writable first.
-						HTMLMinifier::$CacheFolder = HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR; // Sets the cache folder.
+						HTMLMinifier::$CacheFolder = self::_get_cache_dir(); // Sets the cache folder.
 						if(wp_is_writable(HTMLMinifier::$CacheFolder)) {						
 							$cache_key = $filepath;
 							if(!empty(self::$CurrentOptions['caching']['expiration_time']))
@@ -110,7 +110,6 @@ class HTMLMinifier_Manager {
 						$output = HTMLMinifier::minify_rsc($output,$ext,self::$CurrentOptions['core'],$cache_key);
 					elseif($ext === 'css' && $min_css)
 						$output = HTMLMinifier::minify_rsc($output,$ext,self::$CurrentOptions['core'],$cache_key);
-						
 				}
 				
 				// Send response headers & content.
@@ -163,10 +162,8 @@ class HTMLMinifier_Manager {
 			
 			// If we are adding a new .htaccess entry, then do it.
 			if($add) {
-				$idx = strpos($content,'RewriteBase /',strpos($content,'#BEGIN WordPress')+17) + 13; // Find the point to split the string.
-				$split = array( substr($content,0,$idx),substr($content,$idx) ); // Splits the string.
 				$add = '#BEGIN ' . self::HTACCESS_MARKER . PHP_EOL . file_get_contents(HTML_MINIFIER__PLUGIN_DIR . 'inc/mod.htaccess') . PHP_EOL . '#END ' . self::HTACCESS_MARKER;
-				$content = trim($split[0]) . PHP_EOL . PHP_EOL . $add . PHP_EOL . PHP_EOL . trim($split[1]);
+				$content = $add . PHP_EOL . PHP_EOL . $content;
 			}
 			
 			// Save output.
@@ -207,6 +204,7 @@ class HTMLMinifier_Manager {
 		$option = self::$CurrentOptions;
 		if(!isset($option['version']) || $option['version'] < self::PLUGIN_OPTIONS_VERSION) {
 			require_once HTML_MINIFIER__PLUGIN_DIR . 'inc/HTMLMinifier.upgrader.php';
+			self::write_htaccess(true);
 			$option = HTMLMinifier_Upgrader::run($option);
 			self::update_options($option,true); // Save the upgrade.
 		}
@@ -215,7 +213,8 @@ class HTMLMinifier_Manager {
 	}
 	
 	public static function clear_cache() {
-		$glob = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
+		$cache = self::_get_cache_dir();
+		$glob = glob($cache . DIRECTORY_SEPARATOR . '*');
 		if(count($glob) <= 0) return false;
 		foreach($glob as $file) {
 			if(preg_match('/^index\\.php$/i',basename($file))) continue;
@@ -224,16 +223,25 @@ class HTMLMinifier_Manager {
 		return true;
 	}
 	
-	// This function hijacks the main query and injects a cached page if there is any.
-	public static function posts_request($request, $query) {
-		if ( is_home() && $query->is_main_query() ) {
-			$page = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
-			//$key = 'homepage_query_cache_' . $page;
-			//if(wp_cache_get( $key, 'cache_group' ))
-			$request = null;
+	// Returns the cache directory, and creates the folders if it doesn't exist.
+	private static function _get_cache_dir() {
+		if(is_dir(WP_CONTENT_DIR)) {
+			
+			// Finds the cache folder and creates it if it is missing.
+			$cache = WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'html-minifier';
+			if(!is_dir($cache)) {
+				if(!mkdir($cache, fileperms(WP_CONTENT_DIR), true)) {
+					trigger_error("The HTML Minifier plugin is unable to create a caching folder in $cache.",E_USER_WARNING);
+					return false;
+				}
+			}
+			
+			return $cache; // Returns the caching folder.
+			
+		} else {
+			trigger_error("The HTML Minifier plugin is unable to find your WP-Content folder.",E_USER_WARNING);
 		}
-		//var_dump($request,$query);
-		//return null;
+		return false;
 	}
 	
 	// Wrapper around the HTMLMinifier function, adding an additional option unique to Wordpress.

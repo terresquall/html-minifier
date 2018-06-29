@@ -8,9 +8,10 @@ is fine.
 
 @author		Terence Pek <terence@terresquall.com>
 @website	www.terresquall.com
-@version	3.0.9
-@dated		13/05/2018
-@notes		- Fixed a bug causing <style scoped> tags to not have their comments cleaned.
+@version	3.1.0
+@dated		27/06/2018
+@notes		- Fixed a bug with the 'ignore_async_and_defer_tags' option. They behaved opposite of what they should have.
+			- Fixed a bug causing <style scoped> tags to not have their comments cleaned.
 			- Fixed a bug with <style> types nested in IE conditional tags causing a fatal error.
 			- <script> tags that have an 'id' attribute are no longer merged with other scripts.
 			- Non-Javascript <script> tags are no longer moved, and Javascript comments in them are no longer removed.
@@ -23,15 +24,13 @@ is fine.
 			Resolved a few bugs with whitespace being left behind if you choose to not compress script tags.
 			Fixed a bug that caused chunks of non-conditional commented content to be removed.
 			- Made $CacheFolder more lenient with directory separators.
-			- Force comment cleaning for 'all_whitespace' compression mode. 
-			- Fixed a bug with script tags inside conditional comments.
 */
 class HTMLMinifier {
 	
 	public static $CacheFolder = ''; // Set this at the end of the file. If empty, there will be no caching.
 	public static $CacheExpiry = 86400; // Time in seconds. 86400 is 1 day.
 	
-	const VERSION = '3.0.9';
+	const VERSION = '3.1.0';
 	const SIGNATURE = 'Original size: %d bytes, minified: %d bytes. HTMLMinifier: www.terresquall.com/web/html-minifier.';
 	const CACHE_SIG = 'Server cached on %s.';
 	
@@ -62,6 +61,7 @@ class HTMLMinifier {
 		'clean_js_comments' => array('remove_comments_with_cdata_tags_js' => false),
 		//'compression_ignore_script_tags' => true, //LEGACY ATTRIBUTE
 		'shift_script_tags_to_bottom' => false, // 'combine_javascript_in_script_tags', 'ignore_async_and_defer_tags'
+		'add_async_defer_tag' => false,
 		
 		// How do you want to compress the script?
 		'compression_mode' => 'all_whitespace_not_newlines',
@@ -593,11 +593,11 @@ class HTMLMinifier {
 	private static function process_script_options($source,$options,&$comments,&$conditionals,&$wrapped_conditionals) {
 				
 		// If none of the options are turned on, then let's move on.
-		if(!($options['clean_js_comments'] || $options['shift_script_tags_to_bottom']))
+		if(!($options['clean_js_comments'] || $options['shift_script_tags_to_bottom']) || $options['add_async_defer_tag'])
 			return $source;
 		
 		// Parse some nested options preemptively.
-		$dont_ignore_async_defer = empty($options['shift_script_tags_to_bottom']['ignore_async_and_defer_tags']);
+		$ignore_async_defer = !empty($options['shift_script_tags_to_bottom']['ignore_async_and_defer_tags']);
 		$ignore_cdata_comments = empty($options['clean_js_comments']['remove_comments_with_cdata_tags_js']);
 		$combine_javascript = !empty($options['shift_script_tags_to_bottom']['combine_javascript_in_script_tags']);
 		
@@ -643,7 +643,7 @@ class HTMLMinifier {
 							$new_str = self::compress($in_script[1][$id] . $in_script[2][$id] . $in_script[3][$id],$options['compression_mode'],$options['compression_ignored_tags']);
 							
 							// If we are moving this tag, remove it from its original position.
-							if( $options['shift_script_tags_to_bottom'] && !($dont_ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer']))) ) {
+							if( $options['shift_script_tags_to_bottom'] && !($ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer']))) ) {
 								$comments[$comment_tag] = self::replace($str,'',$comments[$comment_tag]);
 								$new_cond .= $new_str;
 							} else $comments[$comment_tag] = self::replace($str,$new_str,$comments[$comment_tag]);
@@ -693,7 +693,7 @@ class HTMLMinifier {
 				if($options['shift_script_tags_to_bottom']) {
 					
 					// Don't move this tag if it has the async or defer attribute.
-					if( $dont_ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer'])) ) continue;
+					if( $ignore_async_defer && (isset($attrb['async']) || isset($attrb['defer'])) ) continue;
 					
 					// Figure out if this is a piece of script we should combine or just append at the end.
 					if(!isset($attrb['id']) && !$is_wrapped && trim($scripts[2][$k]) && $combine_javascript) {
@@ -878,6 +878,16 @@ class HTMLMinifier {
 		}
 		
 		return $result;
+	}
+	
+	private static function create_tag($tagName,$content = '',$attributes = false) {
+		$out = "<$tagName";
+		if(is_array($attributes) && count($attributes) > 0) {
+			$out .= ' ';
+			foreach($attributes as $k => $v) $out .= "$k=\"$v\" ";
+			$out = rtrim($out) . '>';
+		}
+		return $out . $content . "</$tagName>";
 	}
 	
 	// Takes an opening HTML tag and segregates it into key value pairs in an array.

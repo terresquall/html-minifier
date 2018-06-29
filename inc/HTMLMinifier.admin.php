@@ -193,7 +193,7 @@ class HTMLMinifier_Admin {
 	}
 	
 	public static function display_settings() {
-		$cache = glob(HTML_MINIFIER__PLUGIN_DIR . 'cache' . DIRECTORY_SEPARATOR . '*');
+		$cache = glob(WP_CONTENT_DIR . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'html-minifier/*');
 		$size = 0;
 		foreach($cache as $file) {
 			if(basename($file) === 'index.php') continue;

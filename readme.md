@@ -4,7 +4,7 @@ Contributors: terresquall
 Tags: source minifier, minify, html, javascript, css, optimisation, caching, reorganisation
 Requires at least: 3.6.4
 Tested up to: 4.9.6
-Stable tag: 2.2.3
+Stable tag: 2.2.4
 Requires PHP: 5.4
 License: GPLv2 or later
 
@@ -24,8 +24,18 @@ Unzip the downloaded file into the plugin folder in your WordPress site and acti
 
 == Changelog ==
 
+= 2.2.4 =
+*Release Date - 27 June 2018*
+
+* This release implements a few fixes to make the plugin more compliant with WordPress plugin coding standards.
+* Changed the injection location of HTML Minifier's .htaccess snippet on the WordPress webroot.
+* Moved the caching folder from _/wp-content/html-minifier/cache_ to _/wp-content/cache/html-minifier_.
+* Moved the Quick Presets section in Primary Settings up, to make it more noticeable for users.
+* Fixed a bug that causes the 'ignore_async_and_defer_tags' to behave opposite of what it should (i.e. it was working when it was toggled off and vice versa).
+
 = 2.2.3 =
 *Release Date - 25 May 2018*
+
 * Fixed a bug where if you enabled .css and .js minification, visiting non-existing .css or .js files would not show a 404.
 
 = 2.2.2 =

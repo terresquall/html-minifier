@@ -22,6 +22,19 @@ if (!function_exists( 'add_action' )) {
 		<table class="form-table">
             <tbody>
 				<tr>
+                    <th scope="row"><?= __('Use Presets','html-minifier'); ?><br/>
+						<small class="cat-tooltip"><?= __("Don't know how to setup HTML Minifier? Start off with these presets.",'html-minifier'); ?></small>
+					</th>
+                    <td valign="top">
+						<legend class="screen-reader-text"><span><?= __('Quick Presets','html-minifier'); ?></span></legend>
+						<input type="submit" name="super_safe" id="super_safe" value="<?= __('Super Safe','html-minifier'); ?>" class="button-secondary tooltip button-presets" title="<?= __('Only the absolute safest minification options are selected.','html-minifier'); ?>"/>
+						<input type="submit" name="safe" id="safe" value="<?= __('Safe (Default)','html-minifier'); ?>" class="button-secondary tooltip button-presets" title="<?= __('Default settings that the plugin comes with.','html-minifier'); ?>"/>
+						<input type="submit" name="moderate" id="moderate" value="<?= __('Moderate','html-minifier'); ?>" class="button-secondary tooltip button-presets" title="<?= __('Only the riskiest options are left out.','html-minifier'); ?>"/>
+						<input type="submit" name="fully_optimised" id="fully_optimised" value="<?= __('Fully-Optimised','html-minifier'); ?>" class="button-secondary tooltip button-presets" title="<?= __("Optimises everything. 'Nuff said.",'html-minifier'); ?>"/>
+                    </td>
+                </tr>
+				<!--tr class="show-more"><td></td><td><a href="javascript:" data-less="Show less options &uarr;" data-more="Show more options &darr;">Show more options &darr;</a></td></tr-->
+				<tr>
                     <th scope="row"><?= __('General Options','html-minifier'); ?><br/><small class="cat-tooltip"><?= __("Mouse over each option for more information.",'html-minifier'); ?></small></th>
                     <td>
                         <fieldset>
@@ -186,18 +199,6 @@ if (!function_exists( 'add_action' )) {
                     </td>
                 </tr>
 				<tr>
-                    <th scope="row"><?= __('Quick Presets','html-minifier'); ?><br/>
-						<small class="cat-tooltip"><?= __("Don't know how to setup? Try these presets.",'html-minifier'); ?></small>
-					</th>
-                    <td valign="top">
-						<legend class="screen-reader-text"><span><?= __('Quick Presets','html-minifier'); ?></span></legend>
-						<input type="submit" name="super_safe" id="super_safe" value="<?= __('Super Safe','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Only the absolute safest minification options are selected.','html-minifier'); ?>"/>
-						<input type="submit" name="safe" id="safe" value="<?= __('Safe (Default)','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Default settings that the plugin comes with.','html-minifier'); ?>"/>
-						<input type="submit" name="moderate" id="moderate" value="<?= __('Moderate','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Only the riskiest options are left out.','html-minifier'); ?>"/>
-						<input type="submit" name="fully_optimised" id="fully_optimised" value="<?= __('Fully-Optimised','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __("Optimises everything. 'Nuff said.",'html-minifier'); ?>"/>
-                    </td>
-                </tr>
-				<tr>
                     <th scope="row"></th>
                     <td>
                         <input type="submit" name="submit-core" id="submit-core" class="button-primary" value="<?= __('Save Changes','html-minifier'); ?>"/>
@@ -292,7 +293,7 @@ if (!function_exists( 'add_action' )) {
                     <th scope="row"></th>
                     <td>
                         <input type="submit" name="submit-manager" id="submit-manager" class="button-primary" value="<?= __('Save Changes','html-minifier'); ?>"/>
-						<input type="submit" name="restore_defaults_manager" id="restore_defaults_manager" value="<?= __('Restore Defaults','html-minifier'); ?>" class="button-secondary tooltip button-presets" onclick="return confirm('<?= __('Are you sure? Your current settings will be lost.','html-minifier'); ?>');" title="<?= __('Restores the settings on this page to their default values.','html-minifier'); ?>"/>
+						<input type="submit" name="restore_defaults_manager" id="restore_defaults_manager" value="<?= __('Restore Defaults','html-minifier'); ?>" class="button-secondary tooltip button-presets" title="<?= __('Restores the settings on this page to their default values.','html-minifier'); ?>"/>
 					</td>
                 </tr>
             </tbody>

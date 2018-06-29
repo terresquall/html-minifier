@@ -18,6 +18,7 @@ class HTMLMinifier_Upgrader {
 		if($options['version'] <= 1) $options = self::from_1_to_2($options);
 		if($options['version'] <= 2) $options = self::from_2_to_3($options);
 		if($options['version'] <= 4) $options = self::from_3_to_5($options);
+		if($options['version'] <= 5) $options['version'] = 6;
 		
 		return $options;
 	}

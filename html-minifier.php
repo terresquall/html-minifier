@@ -6,8 +6,8 @@
 Plugin Name: HTML Minifier
 Plugin URI: http://www.terresquall.com/web/html-minifier/
 Description: Provides a variety of optimisation options (e.g. minification, caching, code reorganisation) for your site's source code to help meet today's web performance standards.
-Version: 2.2.3
-Dated: 25/05/2018
+Version: 2.2.4
+Dated: 27/06/2018
 Author: Terresquall
 Author URI: http://www.terresquall.com/
 License: GPLv2 or later
@@ -28,8 +28,8 @@ define('HTML_MINIFIER__MINIMUM_WP_VERSION', '3.6.4'); // Probably not used at th
 // Bear essentials
 require_once HTML_MINIFIER__PLUGIN_DIR . 'inc/HTMLMinifier.manager.php';
 
-define('HTML_MINIFIER_PLUGIN_VERSION', '2.2.3');
-define('HTML_MINIFIER_PLUGIN_VERSION_DATE', '25 May 2018');
+define('HTML_MINIFIER_PLUGIN_VERSION', '2.2.4');
+define('HTML_MINIFIER_PLUGIN_VERSION_DATE', '27 June 2018');
 
 add_action('init',array('HTMLMinifier_Manager','init'));
 //add_filter('posts_request',array('HTMLMinifier_Manager','posts_request'),10,2); // Hijack the loop for the main cache.
